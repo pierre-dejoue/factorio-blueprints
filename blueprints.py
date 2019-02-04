@@ -16,7 +16,7 @@ BLUEPRINT_VERSION = 0
 
 
 DEFAULT_DB_PATH = 'factorio-blueprints-db'
-DEFAULT_NO_BOOK_NAME = '_NOT_A_BLUEPRINT_BOOK'
+DEFAULT_NO_BOOK_NAME = 'Not a blueprint book'
 
 
 def full_db_path(db_path = DEFAULT_DB_PATH):

@@ -6,11 +6,11 @@ Command line tool to parse and manage Factorio blueprint strings.
 
 ## Database
 
-The script will store blueprints as JSON files in a folder referred to as the database. The default location of the database is folder `factorio-blueprints-db` located in the same direcotry as the Pyhon script.
+The script will store blueprints as JSON files in a folder referred to as the database. By default the database is located in `./factorio-blueprints-db` relatively to this repository.
 
 Blueprint books are stored as folders, containing one file per individual blueprint.
 
-Single blueprints (not part of a blueprint book) are stored in a special folder named `not-a-blueprint-book`.
+Single blueprints (not part of a blueprint book) are stored in a special folder named `Not a blueprint book`.
 
 It is advised to manage the database folder as a separate git repository.
 
