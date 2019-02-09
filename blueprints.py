@@ -7,37 +7,51 @@ from __future__ import print_function
 
 import argparse
 import base64
+import ConfigParser
 import json
 import os
+import sys
 import zlib
 
 
-BLUEPRINT_VERSION = 0
+
+CONFIG_FILE = 'config.ini'
+SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
+BLUEPRINT_SUPPORTED_VERSIONS = [0]
 
 
-DEFAULT_DB_PATH = 'factorio-blueprints-db'
-DEFAULT_NO_BOOK_NAME = 'Not a blueprint book'
+try:
+    config = ConfigParser.RawConfigParser()
+    config.read(os.path.join(SCRIPT_PATH, CONFIG_FILE))
+
+    BLUEPRINT_VERSION = config.getint('blueprints', 'version')
+    DB_PATH = config.get('blueprints-db', 'location')
+    NO_BOOK_NAME = config.get('blueprints-db', 'not_a_book_special_folder')
+except Exception as err:
+    print('Error parsing ' + CONFIG_FILE + ': ' + str(err))
+    sys.exit(-1)
 
 
-def full_db_path(db_path = DEFAULT_DB_PATH):
-    script_path = os.path.dirname(os.path.realpath(__file__))
-    return os.path.join(script_path, db_path)
 
 
-def create_db_directories(db_path = DEFAULT_DB_PATH, not_a_book = DEFAULT_NO_BOOK_NAME):
+def full_db_path(db_path = DB_PATH):
+    return os.path.join(SCRIPT_PATH, db_path)
+
+
+def create_db_directories(db_path = DB_PATH, not_a_book = NO_BOOK_NAME):
     """create DB if not existing"""
     db_directory = full_db_path(db_path)
     if not os.path.exists(db_directory):
         print('Make directory: ' + db_directory)
         os.makedirs(db_directory)
-    db_not_a_book_directory = os.path.join(db_directory,  not_a_book)
+    db_not_a_book_directory = os.path.join(db_directory, not_a_book)
     if not os.path.exists(db_not_a_book_directory):
         print('Make directory: ' + db_not_a_book_directory)
         os.makedirs(db_not_a_book_directory)
 
 
 def parse_blueprint_string(blueprint_str):
-    assert blueprint_str[0] == str(BLUEPRINT_VERSION), 'Blueprint version number = ' + blueprint_str[0] + ', expected ' + str(BLUEPRINT_VERSION)
+    assert int(blueprint_str[0]) in BLUEPRINT_SUPPORTED_VERSIONS, 'Blueprint version number ' + blueprint_str[0] + ' is not among the supported versions: ' + str(BLUEPRINT_SUPPORTED_VERSIONS)
     return zlib.decompress(base64.b64decode(blueprint_str[1:]))
 
 
@@ -55,7 +69,7 @@ def delete_book_content(book_directory):
             print('Error deleting blueprint file [' + file_path + ']: ' + str(err))
 
 
-def store_blueprint_book(book_obj, db_path = DEFAULT_DB_PATH):
+def store_blueprint_book(book_obj, db_path = DB_PATH):
     book_name = book_obj['blueprint_book']['label'] if 'label' in book_obj['blueprint_book'].keys() else 'no-name'
 
     # Create blueprint book folder, or erase its content if existing
@@ -77,7 +91,7 @@ def store_blueprint_book(book_obj, db_path = DEFAULT_DB_PATH):
             print('Error writing blueprint file: ' + str(err))
 
 
-def store_single_blueprint(blueprint_obj, db_path = DEFAULT_DB_PATH, book_name = DEFAULT_NO_BOOK_NAME, prefix = ''):
+def store_single_blueprint(blueprint_obj, db_path = DB_PATH, book_name = NO_BOOK_NAME, prefix = ''):
     blueprint_name = blueprint_obj['blueprint']['label'] if 'label' in blueprint_obj['blueprint'].keys() else 'no-name'
     rel_db_path = os.path.join(book_name, prefix + blueprint_name + '.json')
     full_path = os.path.join(full_db_path(db_path), rel_db_path)
@@ -89,7 +103,7 @@ def store_single_blueprint(blueprint_obj, db_path = DEFAULT_DB_PATH, book_name =
     json.dump(blueprint_obj, fp, indent=2, separators=(',', ': '))
 
 
-def store_db_from_string(blueprint_raw_string, db_path = DEFAULT_DB_PATH, book_name = DEFAULT_NO_BOOK_NAME):
+def store_db_from_string(blueprint_raw_string, db_path = DB_PATH, book_name = NO_BOOK_NAME):
     result = 0
     try:
         blueprint_json = parse_blueprint_string(blueprint_raw_string)
