@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-CLI to manage Factorio blueprints
+Command line tool to manage blueprint strings from the game Factorio (https://www.factorio.com/)
 """
 
 from __future__ import print_function
@@ -160,9 +160,9 @@ def list_db(db_path = DB_PATH):
 
 def main():
     result = 0
-    parser = argparse.ArgumentParser(description='Manage Factorio blueprints')
+    parser = argparse.ArgumentParser(description='Manage blueprint strings from the game Factorio (https://www.factorio.com/)')
     parser.add_argument('-s', '--store-db-from-strings', metavar='raw_string', dest='blueprint_strings', nargs='+', help='Store blueprints from raw strings')
-    parser.add_argument('-f', '--store-db-from-files', metavar='file', dest='blueprint_files', nargs='+', help='Store blueprints from files, one raw blueprint string per line')
+    parser.add_argument('-f', '--store-db-from-files', metavar='file', dest='blueprint_files', nargs='+', help='Store blueprints from files, one raw string per line')
     parser.add_argument('-l', '--list', dest='list_db', action='store_true', help='List database content')
     args = parser.parse_args()
 

@@ -1,7 +1,7 @@
 Factorio Blueprints
 ===================
 
-Command line tool to parse and manage Factorio blueprint strings.
+A command line tool to parse and manage blueprint strings from the game [Factorio](https://www.factorio.com/).
 
 
 ## Database
