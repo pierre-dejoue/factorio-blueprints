@@ -83,16 +83,18 @@ def store_blueprint_book(book_obj, db_path = DB_PATH):
 
     # Create or update individual blueprints
     for blueprint_elt in book_obj['blueprint_book']['blueprints']:
-        prefix_index = '{0:03d} - '.format(blueprint_elt['index'])
         blueprint_obj = { 'blueprint' : blueprint_elt['blueprint'] }
+        blueprint_index = blueprint_elt['index']
         try:
-            store_single_blueprint(blueprint_obj, prefix_index, book_name, db_path)
+            store_single_blueprint(blueprint_obj, blueprint_index, book_name, db_path)
         except Exception as err:
             print('Error writing blueprint file: ' + str(err))
 
 
-def store_single_blueprint(blueprint_obj, prefix_name, book_name = NO_BOOK_NAME, db_path = DB_PATH):
+def store_single_blueprint(blueprint_obj, blueprint_index = -1, book_name = NO_BOOK_NAME, db_path = DB_PATH):
+    assert blueprint_index >= 0 or book_name == NO_BOOK_NAME, 'Cannot add an individual blueprint to a book yet'
     blueprint_name = blueprint_obj['blueprint']['label'] if 'label' in blueprint_obj['blueprint'].keys() else 'no-name'
+    prefix_name = '{0:03d} - '.format(blueprint_index) if blueprint_index >= 0 else ''
     rel_db_path = os.path.join(book_name, prefix_name + blueprint_name + '.json')
     full_path = os.path.join(full_db_path(db_path), rel_db_path)
     if os.path.exists(full_path):
@@ -109,9 +111,10 @@ def store_db_from_string(blueprint_raw_string, book_name = NO_BOOK_NAME, db_path
         blueprint_json = parse_blueprint_string(blueprint_raw_string)
         blueprint_obj = json.loads(blueprint_json)
         if 'blueprint_book' in blueprint_obj.keys():
+            assert book_name == NO_BOOK_NAME, 'Cannot store a blueprint book in another blueprint book'
             store_blueprint_book(blueprint_obj, db_path)
         elif 'blueprint' in blueprint_obj.keys():
-            store_single_blueprint(blueprint_obj, '', book_name, db_path)
+            store_single_blueprint(blueprint_obj, -1, book_name, db_path)
         else:
             print('ParsingError: Could not identify the type of blueprint ' + blueprint_obj.keys())
             result = -1
@@ -128,9 +131,15 @@ def store_db_from_string(blueprint_raw_string, book_name = NO_BOOK_NAME, db_path
     return result
 
 
-def list_book_contents(book_name, db_path = DB_PATH):
+def db_book_exists(book_name, db_path = DB_PATH):
+    book_path = os.path.join(full_db_path(db_path), book_name)
+    return os.path.exists(book_path)
+
+
+def get_book_contents(book_name, db_path = DB_PATH):
     content = []
     book_path = os.path.join(full_db_path(db_path), book_name)
+    assert os.path.exists(book_path), 'Path does not exist [' + book_path + ']'
     for file in os.listdir(book_path):
         file_path = os.path.join(book_path, file)
         if os.path.isfile(file_path) and file[-5:] == ".json":
@@ -138,24 +147,32 @@ def list_book_contents(book_name, db_path = DB_PATH):
     return content
 
 
-def list_db(db_path = DB_PATH):
-    content_singles = []
+def list_book(contents, book_name):
+    if contents:
+        if book_name == NO_BOOK_NAME:
+            print('Individual Blueprints:')
+        else:
+            print('Blueprint Book: ' + book_name + '/')
+        for bp_file in contents:
+            print(' >> ' + bp_file)
+
+
+def list_db_all(db_path = DB_PATH):
+    single_blueprints = []
     for file in os.listdir(full_db_path(db_path)):
-        content = []
+        contents = []
         if file == NO_BOOK_NAME:
             # Print that one last
-            content_single = list_book_contents(NO_BOOK_NAME, db_path)
+            single_blueprints = get_book_contents(NO_BOOK_NAME, db_path)
         elif file[0] != '.' and os.path.isdir(os.path.join(full_db_path(db_path), file)):
-            content = list_book_contents(file, db_path)
-        if content:
-            print('Blueprint Book: ' + file + '/')
-            for bp_file in content:
-                print(' >> ' + bp_file)
+            contents = get_book_contents(file, db_path)
+        list_book(contents, file)
+    list_book(single_blueprints, NO_BOOK_NAME)
 
-    if content_singles:
-        print('Individual Blueprints:')
-        for bp_file in content_singles:
-            print(' >> ' + bp_file)
+
+def list_db_book(book_name = NO_BOOK_NAME, db_path = DB_PATH):
+    contents = get_book_contents(book_name, db_path)
+    list_book(contents, book_name)
 
 
 def main():
@@ -163,24 +180,32 @@ def main():
     parser = argparse.ArgumentParser(description='Manage blueprint strings from the game Factorio (https://www.factorio.com/)')
     parser.add_argument('-s', '--store-db-from-strings', metavar='raw_string', dest='blueprint_strings', nargs='+', help='Store blueprints from raw strings')
     parser.add_argument('-f', '--store-db-from-files', metavar='file', dest='blueprint_files', nargs='+', help='Store blueprints from files, one raw string per line')
+    parser.add_argument('-b', '--book-name', metavar='book', dest='blueprint_book_name', default = NO_BOOK_NAME, help='Name of a blueprint book')
     parser.add_argument('-l', '--list', dest='list_db', action='store_true', help='List database content')
     args = parser.parse_args()
 
     create_db_directories()
 
+    if args.blueprint_book_name != NO_BOOK_NAME and not db_book_exists(args.blueprint_book_name):
+        print('Error: Blueprint book does not exists in the database [' + args.blueprint_book_name + ']')
+        return -1
+
     if args.blueprint_strings:
         for blueprint_string in args.blueprint_strings:
-            store_db_from_string(blueprint_string)
+            store_db_from_string(blueprint_string, args.blueprint_book_name)
     elif args.blueprint_files:
         for blueprint_file in args.blueprint_files:
             print('Opening file: ' + blueprint_file)
             fp = open(blueprint_file, 'r')
             for blueprint_string in fp:
-                store_db_from_string(blueprint_string.strip())
+                store_db_from_string(blueprint_string.strip(), args.blueprint_book_name)
     elif args.list_db:
-        list_db()
+        if args.blueprint_book_name == NO_BOOK_NAME:
+            list_db_all()
+        else:
+            list_db_book(args.blueprint_book_name)
     else:
-        print("Error: no argument")
+        print("Error: No argument")
         parser.print_help()
         result = -1
 
