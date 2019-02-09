@@ -86,14 +86,14 @@ def store_blueprint_book(book_obj, db_path = DB_PATH):
         prefix_index = '{0:03d} - '.format(blueprint_elt['index'])
         blueprint_obj = { 'blueprint' : blueprint_elt['blueprint'] }
         try:
-            store_single_blueprint(blueprint_obj, db_path, book_name, prefix_index)
+            store_single_blueprint(blueprint_obj, prefix_index, book_name, db_path)
         except Exception as err:
             print('Error writing blueprint file: ' + str(err))
 
 
-def store_single_blueprint(blueprint_obj, db_path = DB_PATH, book_name = NO_BOOK_NAME, prefix = ''):
+def store_single_blueprint(blueprint_obj, prefix_name, book_name = NO_BOOK_NAME, db_path = DB_PATH):
     blueprint_name = blueprint_obj['blueprint']['label'] if 'label' in blueprint_obj['blueprint'].keys() else 'no-name'
-    rel_db_path = os.path.join(book_name, prefix + blueprint_name + '.json')
+    rel_db_path = os.path.join(book_name, prefix_name + blueprint_name + '.json')
     full_path = os.path.join(full_db_path(db_path), rel_db_path)
     if os.path.exists(full_path):
         print('Blueprint Updated: ' + rel_db_path)
@@ -103,7 +103,7 @@ def store_single_blueprint(blueprint_obj, db_path = DB_PATH, book_name = NO_BOOK
     json.dump(blueprint_obj, fp, indent=2, separators=(',', ': '))
 
 
-def store_db_from_string(blueprint_raw_string, db_path = DB_PATH, book_name = NO_BOOK_NAME):
+def store_db_from_string(blueprint_raw_string, book_name = NO_BOOK_NAME, db_path = DB_PATH):
     result = 0
     try:
         blueprint_json = parse_blueprint_string(blueprint_raw_string)
@@ -111,7 +111,7 @@ def store_db_from_string(blueprint_raw_string, db_path = DB_PATH, book_name = NO
         if 'blueprint_book' in blueprint_obj.keys():
             store_blueprint_book(blueprint_obj, db_path)
         elif 'blueprint' in blueprint_obj.keys():
-            store_single_blueprint(blueprint_obj, db_path, book_name)
+            store_single_blueprint(blueprint_obj, '', book_name, db_path)
         else:
             print('ParsingError: Could not identify the type of blueprint ' + blueprint_obj.keys())
             result = -1
@@ -128,28 +128,61 @@ def store_db_from_string(blueprint_raw_string, db_path = DB_PATH, book_name = NO
     return result
 
 
+def list_book_contents(book_name, db_path = DB_PATH):
+    content = []
+    book_path = os.path.join(full_db_path(db_path), book_name)
+    for file in os.listdir(book_path):
+        file_path = os.path.join(book_path, file)
+        if os.path.isfile(file_path) and file[-5:] == ".json":
+            content.append(file)
+    return content
+
+
+def list_db(db_path = DB_PATH):
+    content_singles = []
+    for file in os.listdir(full_db_path(db_path)):
+        content = []
+        if file == NO_BOOK_NAME:
+            # Print that one last
+            content_single = list_book_contents(NO_BOOK_NAME, db_path)
+        elif file[0] != '.' and os.path.isdir(os.path.join(full_db_path(db_path), file)):
+            content = list_book_contents(file, db_path)
+        if content:
+            print('Blueprint Book: ' + file + '/')
+            for bp_file in content:
+                print(' >> ' + bp_file)
+
+    if content_singles:
+        print('Individual Blueprints:')
+        for bp_file in content_singles:
+            print(' >> ' + bp_file)
+
+
 def main():
     result = 0
     parser = argparse.ArgumentParser(description='Manage Factorio blueprints')
-    parser.add_argument('-s', '--store-db-from-strings', metavar='raw_string', dest='blueprint_strings', nargs='+', help='Blueprint raw strings')
-    parser.add_argument('-f', '--store-db-from-files', metavar='file', dest='blueprint_files', nargs='+', help='Blueprint files, one raw blueprint string per line.')
+    parser.add_argument('-s', '--store-db-from-strings', metavar='raw_string', dest='blueprint_strings', nargs='+', help='Store blueprints from raw strings')
+    parser.add_argument('-f', '--store-db-from-files', metavar='file', dest='blueprint_files', nargs='+', help='Store blueprints from files, one raw blueprint string per line')
+    parser.add_argument('-l', '--list', dest='list_db', action='store_true', help='List database content')
     args = parser.parse_args()
 
     create_db_directories()
 
-    if not args.blueprint_strings and not args.blueprint_files:
-        print("Error: no arguments")
-        parser.print_help()
-        return -1
     if args.blueprint_strings:
         for blueprint_string in args.blueprint_strings:
             store_db_from_string(blueprint_string)
-    if args.blueprint_files:
+    elif args.blueprint_files:
         for blueprint_file in args.blueprint_files:
             print('Opening file: ' + blueprint_file)
             fp = open(blueprint_file, 'r')
             for blueprint_string in fp:
                 store_db_from_string(blueprint_string.strip())
+    elif args.list_db:
+        list_db()
+    else:
+        print("Error: no argument")
+        parser.print_help()
+        result = -1
 
     return result
 
