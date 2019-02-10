@@ -16,6 +16,7 @@ import zlib
 
 
 
+
 CONFIG_FILE = 'config.ini'
 SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 BLUEPRINT_SUPPORTED_VERSIONS = [0]
@@ -28,6 +29,7 @@ try:
     BLUEPRINT_VERSION = config.getint('blueprints', 'version')
     DB_PATH = config.get('blueprints-db', 'location')
     NO_BOOK_NAME = config.get('blueprints-db', 'not_a_book_special_folder')
+    VERSION_FILE = config.get('blueprints-db', 'version_file')
 except Exception as err:
     print('Error parsing ' + CONFIG_FILE + ': ' + str(err))
     sys.exit(-1)
@@ -81,7 +83,9 @@ def delete_book_content(book_directory):
         file_path = os.path.join(book_directory, file)
         try:
             if os.path.isfile(file_path):
-                os.unlink(file_path)
+                filename = os.path.basename(file_path)
+                if filename[-5:] == '.json' or filename == VERSION_FILE:
+                    os.unlink(file_path)
         except Exception as err:
             print('Error deleting blueprint file [' + file_path + ']: ' + str(err))
 
@@ -107,6 +111,9 @@ def store_blueprint_book(book_obj, db_path = DB_PATH):
         except Exception as err:
             print('Error writing blueprint file: ' + str(err))
 
+    # Version text file
+    store_book_version(book_obj['blueprint_book']['version'], book_name, db_path)
+
 
 def store_single_blueprint(blueprint_obj, blueprint_index = -1, book_name = NO_BOOK_NAME, db_path = DB_PATH):
     assert blueprint_index >= 0 or book_name == NO_BOOK_NAME, 'Cannot add an individual blueprint to a book yet'
@@ -119,6 +126,15 @@ def store_single_blueprint(blueprint_obj, blueprint_index = -1, book_name = NO_B
         print('Blueprint Created: ' + rel_db_path)
     fp = open(full_path, 'w')
     json.dump(blueprint_obj, fp, indent=2, separators=(',', ': '))
+    fp.close()
+
+
+def store_book_version(version, book_name = NO_BOOK_NAME, db_path = DB_PATH):
+    rel_db_path = os.path.join(book_name, VERSION_FILE)
+    full_path = os.path.join(full_db_path(db_path), rel_db_path)
+    fp = open(full_path, 'w')
+    fp.write(str(version) + '\n')
+    fp.close()
 
 
 def store_from_string(blueprint_raw_string, book_name = NO_BOOK_NAME, db_path = DB_PATH):
@@ -196,6 +212,8 @@ def process_blueprint_string(blueprint_string, stdout = False, book_name = NO_BO
         print(parse_blueprint_string(blueprint_string))
     else:
         store_from_string(blueprint_string, book_name, db_path)
+
+
 
 
 def main():

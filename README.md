@@ -1,7 +1,7 @@
 Factorio Blueprints
 ===================
 
-A command line tool to parse and manage blueprint strings from the game [Factorio](https://www.factorio.com/).
+A command line tool to parse and manage blueprint strings from the game **[Factorio](https://www.factorio.com/)**.
 
 
 ## Database
@@ -15,15 +15,15 @@ Single blueprints (not part of a blueprint book) are stored in a special folder 
 It is advised to manage the database folder as a separate git repository.
 
 
-## Requirements
-
-* __Python 2.7.x__
-  * http://www.python.org/download/
-
-
-## Usage Notes
+## Usage
 
 `python -u blueprints.py --help`
+
+
+## Requirements
+
+* __Python 2.7.x__: http://www.python.org/download/
+
 
 ## License
 
