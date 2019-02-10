@@ -59,7 +59,7 @@ def parse_blueprint_string(blueprint_str):
 
 
 def generate_blueprint_string(blueprint_json):
-    return str(BLUEPRINT_VERSION) +  base64.b64encode(zlib.compress(blueprint_json))
+    return str(BLUEPRINT_VERSION) + base64.b64encode(zlib.compress(blueprint_json))
 
 
 blueprint_filename_pattern = re.compile('^(([0-9]{3,}) - )?(.*)\.json$')
@@ -125,11 +125,22 @@ def store_single_blueprint(blueprint_obj, blueprint_index = -1, book_name = NO_B
     else:
         print('Blueprint Created: ' + rel_db_path)
     fp = open(full_path, 'w')
-    json.dump(blueprint_obj, fp, indent=2, separators=(',', ': '))
+    json.dump(blueprint_obj, fp, sort_keys=True, indent=2, separators=(',', ': '))
     fp.close()
 
 
-def store_book_version(version, book_name = NO_BOOK_NAME, db_path = DB_PATH):
+def read_book_version(book_name, db_path = DB_PATH):
+    assert book_name != NO_BOOK_NAME, 'Only valid blueprint books have a version file'
+    rel_db_path = os.path.join(book_name, VERSION_FILE)
+    full_path = os.path.join(full_db_path(db_path), rel_db_path)
+    fp = open(full_path, 'r')
+    version = int(fp.read().strip())
+    fp.close()
+    return version
+
+
+def store_book_version(version, book_name, db_path = DB_PATH):
+    assert book_name != NO_BOOK_NAME, 'Only valid blueprint books have a version file'
     rel_db_path = os.path.join(book_name, VERSION_FILE)
     full_path = os.path.join(full_db_path(db_path), rel_db_path)
     fp = open(full_path, 'w')
@@ -207,6 +218,34 @@ def list_db_book(book_name = NO_BOOK_NAME, db_path = DB_PATH):
     list_book(contents, book_name)
 
 
+def encoded_book(book_name, contents, version, active_index = 0):
+    assert contents, 'Empty book [' + book_name + ']'
+    blueprints = [{'blueprint': bp_parsed_file['blueprint'], 'index': bp_parsed_file['index']} for bp_parsed_file in contents]
+    blueprint_book = { 'blueprint_book': {
+        'active_index': active_index,
+        'blueprints': blueprints,
+        'item': 'blueprint-book',
+        'label': book_name,
+        'version': version
+    }}
+    # Ensure the most compact JSON format
+    json_string = json.dumps(blueprint_book, sort_keys=True, separators=(',', ':'))
+    return generate_blueprint_string(json_string)
+
+
+def encoded_db_book(book_name, db_path = DB_PATH):
+    assert book_name != NO_BOOK_NAME, 'Can only decode a valid blueprint book'
+    contents = get_book_contents(book_name, db_path)
+    for bp_parsed_file in contents:
+        rel_db_path = os.path.join(book_name, bp_parsed_file['filename'])
+        full_path = os.path.join(full_db_path(db_path), rel_db_path)
+        fp = open(full_path, 'r')
+        bp_parsed_file['blueprint'] = json.load(fp)['blueprint']
+        fp.close()
+    version = read_book_version(book_name, db_path)
+    return encoded_book(book_name, contents, version)
+
+
 def process_blueprint_string(blueprint_string, stdout = False, book_name = NO_BOOK_NAME, db_path = DB_PATH):
     if stdout:
         print(parse_blueprint_string(blueprint_string))
@@ -219,10 +258,12 @@ def process_blueprint_string(blueprint_string, stdout = False, book_name = NO_BO
 def main():
     result = 0
     parser = argparse.ArgumentParser(description='Manage blueprint strings from the game Factorio (https://www.factorio.com/)')
-    parser.add_argument('-s', '--store-from-strings', metavar='raw_string', dest='blueprint_strings', nargs='+', help='Store blueprints from raw strings')
-    parser.add_argument('-f', '--store-from-files', metavar='file', dest='blueprint_files', nargs='+', help='Store blueprints from files, one raw string per line')
+    parser.add_argument('files', metavar='FILE', nargs='*', help='Input files for options -f and -r')
+    parser.add_argument('-s', '--from-strings', metavar='raw_string', dest='blueprint_strings', nargs='+', help='Store blueprints from raw strings')
+    parser.add_argument('-f', '--from-files', dest='blueprint_files', action='store_true', help='Store blueprints from files, one raw string per line')
     parser.add_argument('-b', '--book-name', metavar='book', dest='blueprint_book_name', default = NO_BOOK_NAME, help='Name of a blueprint book')
     parser.add_argument('-l', '--list', dest='list_db', action='store_true', help='List database content')
+    parser.add_argument('-r', '--raw', dest='raw', action='store_true', help='Print out book or json file as a blueprint string')
     parser.add_argument('--json', dest='json', action='store_true', help='Print out the blueprints as JSON strings')
     args = parser.parse_args()
 
@@ -232,24 +273,47 @@ def main():
         print('Error: Blueprint book does not exists in the database [' + args.blueprint_book_name + ']')
         return -1
 
-    if args.blueprint_strings:
-        for blueprint_string in args.blueprint_strings:
-            process_blueprint_string(blueprint_string, args.json, args.blueprint_book_name)
-    elif args.blueprint_files:
-        for blueprint_file in args.blueprint_files:
-            if not args.json:
-                print('Opening file: ' + blueprint_file)
-            fp = open(blueprint_file, 'r')
-            for blueprint_string in fp:
-                process_blueprint_string(blueprint_string.strip(), args.json, args.blueprint_book_name)
-    elif args.list_db:
-        if args.blueprint_book_name == NO_BOOK_NAME:
-            list_db_all()
+    try:
+        if args.blueprint_strings:
+            assert not args.blueprint_files, 'Incompatible options -s and -f'
+            assert not args.list_db, 'Incompatible options -s and -l'
+            assert not args.raw, 'Incompatible options -s and -r'
+            for blueprint_string in args.blueprint_strings:
+                process_blueprint_string(blueprint_string, args.json, args.blueprint_book_name)
+        elif args.blueprint_files:
+            assert not args.list_db, 'Incompatible options -f and -l'
+            assert not args.raw, 'Incompatible options -f and -r'
+            assert args.files, 'No file specified with option -f'
+            for blueprint_file in args.files:
+                if not args.json:
+                    print('Opening file: ' + blueprint_file)
+                fp = open(blueprint_file, 'r')
+                for blueprint_string in fp:
+                    process_blueprint_string(blueprint_string.strip(), args.json, args.blueprint_book_name)
+        elif args.list_db:
+            assert not args.raw, 'Incompatible options -l and -r'
+            if args.blueprint_book_name == NO_BOOK_NAME:
+                list_db_all()
+            else:
+                list_db_book(args.blueprint_book_name)
+        elif args.raw:
+            if args.blueprint_book_name == NO_BOOK_NAME:
+                assert args.files, 'No file or blueprint book specified with option -r'
+                for json_file in args.files:
+                    assert json_file[-5:] == '.json', 'Expect JSON files with option -r, but got [' +  json_file + ']'
+                    fp = open(json_file, 'r')
+                    # Ensure the most compact JSON format
+                    json_string = json.dumps(json.load(fp), sort_keys=True, separators=(',', ':'))
+                    print(generate_blueprint_string(json_string))
+                    fp.close()
+            else:
+                print(encoded_db_book(args.blueprint_book_name))
         else:
-            list_db_book(args.blueprint_book_name)
-    else:
-        print("Error: No argument")
-        parser.print_help()
+            print("Error: No argument")
+            parser.print_help()
+            result = -1
+    except AssertionError as err:
+        print('AssertionError: ' + str(err))
         result = -1
 
     return result
