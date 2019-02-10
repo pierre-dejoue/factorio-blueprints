@@ -121,7 +121,7 @@ def store_single_blueprint(blueprint_obj, blueprint_index = -1, book_name = NO_B
     json.dump(blueprint_obj, fp, indent=2, separators=(',', ': '))
 
 
-def store_db_from_string(blueprint_raw_string, book_name = NO_BOOK_NAME, db_path = DB_PATH):
+def store_from_string(blueprint_raw_string, book_name = NO_BOOK_NAME, db_path = DB_PATH):
     result = 0
     try:
         blueprint_json = parse_blueprint_string(blueprint_raw_string)
@@ -191,13 +191,21 @@ def list_db_book(book_name = NO_BOOK_NAME, db_path = DB_PATH):
     list_book(contents, book_name)
 
 
+def process_blueprint_string(blueprint_string, stdout = False, book_name = NO_BOOK_NAME, db_path = DB_PATH):
+    if stdout:
+        print(parse_blueprint_string(blueprint_string))
+    else:
+        store_from_string(blueprint_string, book_name, db_path)
+
+
 def main():
     result = 0
     parser = argparse.ArgumentParser(description='Manage blueprint strings from the game Factorio (https://www.factorio.com/)')
-    parser.add_argument('-s', '--store-db-from-strings', metavar='raw_string', dest='blueprint_strings', nargs='+', help='Store blueprints from raw strings')
-    parser.add_argument('-f', '--store-db-from-files', metavar='file', dest='blueprint_files', nargs='+', help='Store blueprints from files, one raw string per line')
+    parser.add_argument('-s', '--store-from-strings', metavar='raw_string', dest='blueprint_strings', nargs='+', help='Store blueprints from raw strings')
+    parser.add_argument('-f', '--store-from-files', metavar='file', dest='blueprint_files', nargs='+', help='Store blueprints from files, one raw string per line')
     parser.add_argument('-b', '--book-name', metavar='book', dest='blueprint_book_name', default = NO_BOOK_NAME, help='Name of a blueprint book')
     parser.add_argument('-l', '--list', dest='list_db', action='store_true', help='List database content')
+    parser.add_argument('--json', dest='json', action='store_true', help='Print out the blueprints as JSON strings')
     args = parser.parse_args()
 
     create_db_directories()
@@ -208,13 +216,14 @@ def main():
 
     if args.blueprint_strings:
         for blueprint_string in args.blueprint_strings:
-            store_db_from_string(blueprint_string, args.blueprint_book_name)
+            process_blueprint_string(blueprint_string, args.json, args.blueprint_book_name)
     elif args.blueprint_files:
         for blueprint_file in args.blueprint_files:
-            print('Opening file: ' + blueprint_file)
+            if not args.json:
+                print('Opening file: ' + blueprint_file)
             fp = open(blueprint_file, 'r')
             for blueprint_string in fp:
-                store_db_from_string(blueprint_string.strip(), args.blueprint_book_name)
+                process_blueprint_string(blueprint_string.strip(), args.json, args.blueprint_book_name)
     elif args.list_db:
         if args.blueprint_book_name == NO_BOOK_NAME:
             list_db_all()
