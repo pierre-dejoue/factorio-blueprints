@@ -9,6 +9,7 @@ import argparse
 import base64
 import ConfigParser
 import json
+import re
 import os
 import sys
 import zlib
@@ -59,6 +60,22 @@ def generate_blueprint_string(blueprint_json):
     return str(BLUEPRINT_VERSION) +  base64.b64encode(zlib.compress(blueprint_json))
 
 
+blueprint_filename_pattern = re.compile('^(([0-9]{3,}) - )?(.*)\.json$')
+
+
+def parse_blueprint_filename(filename):
+    match = blueprint_filename_pattern.match(filename)
+    if match:
+        index = int(match.group(2)) if match.group(2) else -1
+        return { 'index': index,  'name': match.group(3), 'filename': filename }
+    else:
+        return None
+
+def generate_blueprint_filename(name, index = -1):
+    prefix = '{0:03d} - '.format(index) if index >= 0 else ''
+    return prefix + name + '.json'
+
+
 def delete_book_content(book_directory):
     for file in os.listdir(book_directory):
         file_path = os.path.join(book_directory, file)
@@ -94,8 +111,7 @@ def store_blueprint_book(book_obj, db_path = DB_PATH):
 def store_single_blueprint(blueprint_obj, blueprint_index = -1, book_name = NO_BOOK_NAME, db_path = DB_PATH):
     assert blueprint_index >= 0 or book_name == NO_BOOK_NAME, 'Cannot add an individual blueprint to a book yet'
     blueprint_name = blueprint_obj['blueprint']['label'] if 'label' in blueprint_obj['blueprint'].keys() else 'no-name'
-    prefix_name = '{0:03d} - '.format(blueprint_index) if blueprint_index >= 0 else ''
-    rel_db_path = os.path.join(book_name, prefix_name + blueprint_name + '.json')
+    rel_db_path = os.path.join(book_name, generate_blueprint_filename(blueprint_name, blueprint_index))
     full_path = os.path.join(full_db_path(db_path), rel_db_path)
     if os.path.exists(full_path):
         print('Blueprint Updated: ' + rel_db_path)
@@ -137,14 +153,14 @@ def db_book_exists(book_name, db_path = DB_PATH):
 
 
 def get_book_contents(book_name, db_path = DB_PATH):
-    content = []
+    contents = []
     book_path = os.path.join(full_db_path(db_path), book_name)
     assert os.path.exists(book_path), 'Path does not exist [' + book_path + ']'
     for file in os.listdir(book_path):
         file_path = os.path.join(book_path, file)
-        if os.path.isfile(file_path) and file[-5:] == ".json":
-            content.append(file)
-    return content
+        if os.path.isfile(file_path):
+            contents.append(parse_blueprint_filename(file))
+    return [a for a in contents if a is not None]
 
 
 def list_book(contents, book_name):
@@ -153,8 +169,8 @@ def list_book(contents, book_name):
             print('Individual Blueprints:')
         else:
             print('Blueprint Book: ' + book_name + '/')
-        for bp_file in contents:
-            print(' >> ' + bp_file)
+        for bp_parsed_file in contents:
+            print(' >> ' + bp_parsed_file['filename'])
 
 
 def list_db_all(db_path = DB_PATH):
