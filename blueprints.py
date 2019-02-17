@@ -218,7 +218,7 @@ def list_db_book(book_name = NO_BOOK_NAME, db_path = DB_PATH):
     list_book(contents, book_name)
 
 
-def encoded_book(book_name, contents, version, active_index = 0):
+def get_book_in_json(book_name, contents, version, active_index = 0):
     assert contents, 'Empty book [' + book_name + ']'
     blueprints = [{'blueprint': bp_parsed_file['blueprint'], 'index': bp_parsed_file['index']} for bp_parsed_file in contents]
     blueprint_book = { 'blueprint_book': {
@@ -230,10 +230,10 @@ def encoded_book(book_name, contents, version, active_index = 0):
     }}
     # Ensure the most compact JSON format
     json_string = json.dumps(blueprint_book, sort_keys=True, separators=(',', ':'))
-    return generate_blueprint_string(json_string)
+    return json_string
 
 
-def encoded_db_book(book_name, db_path = DB_PATH):
+def get_db_book_in_json(book_name, db_path = DB_PATH):
     assert book_name != NO_BOOK_NAME, 'Can only decode a valid blueprint book'
     contents = get_book_contents(book_name, db_path)
     for bp_parsed_file in contents:
@@ -243,7 +243,11 @@ def encoded_db_book(book_name, db_path = DB_PATH):
         bp_parsed_file['blueprint'] = json.load(fp)['blueprint']
         fp.close()
     version = read_book_version(book_name, db_path)
-    return encoded_book(book_name, contents, version)
+    return get_book_in_json(book_name, contents, version)
+
+
+def get_encoded_db_book(book_name, db_path = DB_PATH):
+    return generate_blueprint_string(get_db_book_in_json(book_name, db_path))
 
 
 def process_blueprint_string(blueprint_string, stdout = False, book_name = NO_BOOK_NAME, db_path = DB_PATH):
@@ -307,9 +311,11 @@ def main():
                     print(generate_blueprint_string(json_string))
                     fp.close()
             else:
-                print(encoded_db_book(args.blueprint_book_name))
+                print(get_encoded_db_book(args.blueprint_book_name))
+        elif args.json and args.blueprint_book_name != NO_BOOK_NAME:
+            print(get_db_book_in_json(args.blueprint_book_name))
         else:
-            print("Error: No argument")
+            print("Error: Wrong arguments")
             parser.print_help()
             result = -1
     except AssertionError as err:
