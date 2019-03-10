@@ -35,6 +35,15 @@ except Exception as err:
     sys.exit(-1)
 
 
+ENTITY_RENAMING_0_16_TO_0_17 = {
+    'science-pack-1': 'automation-science-pack',
+    'science-pack-2': 'logistic-science-pack',
+    'science-pack-3': 'chemical-science-pack',
+    'high-tech-science-pack': 'utility-science-pack',
+    'raw-wood': 'wood',
+}
+
+
 
 
 def full_db_path(db_path = DB_PATH):
@@ -257,7 +266,53 @@ def process_blueprint_string(blueprint_string, stdout = False, book_name = NO_BO
         store_from_string(blueprint_string, book_name, db_path)
 
 
-def match_filename(files):
+def match_filename(blueprint_info, blueprint_obj):
+    assert blueprint_obj
+    assert 'blueprint' in blueprint_obj
+    modified = False
+    if 'label' not in blueprint_obj['blueprint'] or blueprint_obj['blueprint']['label'] != blueprint_info['name']:
+        print('Rename blueprint in [' + blueprint_info['name'] + '].')
+        blueprint_obj['blueprint']['label'] = blueprint_info['name']
+        modified = True
+    return modified
+
+
+def update_entity_names(blueprint_info, blueprint_obj, entity_mapping):
+    assert blueprint_obj
+    assert 'blueprint' in blueprint_obj
+    def f_str(dict, k):
+        assert k in dict
+        assert isinstance(dict[k], str) or isinstance(dict[k], unicode)
+        if dict[k] in entity_mapping:
+            dict[k] = entity_mapping[dict[k]]
+            return True
+        else:
+            return False
+    do_nothing = lambda dict, k: False
+    return walk_json_obj_and_map(blueprint_obj, f_str, do_nothing, do_nothing)
+
+
+def walk_json_obj_and_map(json_obj, f_str, f_int, f_float):
+    modified = False
+    if isinstance(json_obj, dict):
+        for (key, value) in json_obj.items():
+            if isinstance(value, str) or isinstance(value, unicode):
+                modified = f_str(json_obj, key)
+            elif isinstance(value, int):
+                modified = f_int(json_obj, key)
+            elif isinstance(value, float):
+                modified = f_float(json_obj, key)
+            else:
+                modified = modified | walk_json_obj_and_map(value, f_str, f_int, f_float)
+    elif isinstance(json_obj, list):
+        for elt in json_obj:
+            modified = modified | walk_json_obj_and_map(elt, f_str, f_int, f_float)
+    else:
+        pass
+    return modified
+
+
+def map_blueprint_json_files(files, f):
     for json_file in files:
         if not os.path.exists(json_file) or not os.path.isfile(json_file):
             print("Error: Skip [" + json_file + "]. File does not exist.")
@@ -272,12 +327,22 @@ def match_filename(files):
         if not blueprint_obj or 'blueprint' not in blueprint_obj:
             print("Error: Skip [" + json_file + "]. Wrong blueprint format.")
             continue
-        if 'label' not in blueprint_obj['blueprint'] or blueprint_obj['blueprint']['label'] != blueprint_info['name']:
-            print('Rename blueprint in [' + blueprint_info['name'] + '].')
-            blueprint_obj['blueprint']['label'] = blueprint_info['name']
+        if f(blueprint_info, blueprint_obj):
+            print('Blueprint Updated: ' + json_file)
             fp = open(json_file, 'w')
             json.dump(blueprint_obj, fp, sort_keys=True, indent=2, separators=(',', ': '))
             fp.close()
+
+
+def map_blueprint_book(book_name, f, db_path = DB_PATH):
+    assert book_name != NO_BOOK_NAME
+    contents = get_book_contents(book_name, db_path)
+    files = []
+    for bp_parsed_file in contents:
+        rel_db_path = os.path.join(book_name, bp_parsed_file['filename'])
+        full_path = os.path.join(full_db_path(db_path), rel_db_path)
+        files.append(full_path)
+    map_blueprint_json_files(files, f)
 
 
 
@@ -293,6 +358,7 @@ def main():
     parser.add_argument('-r', '--raw', dest='raw', action='store_true', help='Print out book or json file as a blueprint string')
     parser.add_argument('--json', dest='json', action='store_true', help='Print out the blueprints as JSON strings')
     parser.add_argument('--match-filename', dest='match_filename', action='store_true', help='Force the blueprint name to match the filename (without the index)')
+    parser.add_argument('--update-to-0.17', dest='update_to_0_17', action='store_true', help='Update some entity names for 0.17')
     args = parser.parse_args()
 
     create_db_directories()
@@ -302,7 +368,7 @@ def main():
         return -1
 
     try:
-        if args.match_filename:
+        if args.match_filename or args.update_to_0_17:
             # Blueprint edition commands
             assert not args.blueprint_files, 'Incompatible option -f with a blueprint edition command'
             assert not args.blueprint_files, 'Incompatible option -s with a blueprint edition command'
@@ -311,7 +377,14 @@ def main():
             if args.match_filename:
                 assert args.blueprint_book_name == NO_BOOK_NAME, 'Imcompatible options --match-filename and --book-name'
                 assert args.files, 'Must provide one or several blueprint JSON files with --match-filename'
-                match_filename(args.files)
+                map_blueprint_json_files(args.files, match_filename)
+            elif args.update_to_0_17:
+                assert args.blueprint_book_name != NO_BOOK_NAME or args.files, 'Must provide a book_name or JSON files with option --update-to-0.17'
+                f_update_to_0_17 = lambda info, obj: update_entity_names(info, obj, ENTITY_RENAMING_0_16_TO_0_17)
+                if args.blueprint_book_name == NO_BOOK_NAME:
+                    map_blueprint_json_files(args.files, f_update_to_0_17)
+                else:
+                    map_blueprint_book(args.blueprint_book_name, f_update_to_0_17)
         else:
             # Blueprint store/load blueprints and blueprint books
             if args.blueprint_strings:
