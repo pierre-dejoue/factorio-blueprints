@@ -367,69 +367,65 @@ def main():
         print('Error: Blueprint book does not exists in the database [' + args.blueprint_book_name + ']')
         return -1
 
-    try:
-        if args.match_filename or args.update_to_0_17:
-            # Blueprint edition commands
-            assert not args.blueprint_files, 'Incompatible option -f with a blueprint edition command'
-            assert not args.blueprint_files, 'Incompatible option -s with a blueprint edition command'
-            assert not args.list_db, 'Incompatible option -l with a blueprint edition command'
-            assert not args.raw, 'Incompatible option -r with a blueprint edition command'
-            if args.match_filename:
-                assert args.blueprint_book_name == NO_BOOK_NAME, 'Imcompatible options --match-filename and --book-name'
-                assert args.files, 'Must provide one or several blueprint JSON files with --match-filename'
-                map_blueprint_json_files(args.files, match_filename)
-            elif args.update_to_0_17:
-                assert args.blueprint_book_name != NO_BOOK_NAME or args.files, 'Must provide a book_name or JSON files with option --update-to-0.17'
-                f_update_to_0_17 = lambda info, obj: update_entity_names(info, obj, ENTITY_RENAMING_0_16_TO_0_17)
-                if args.blueprint_book_name == NO_BOOK_NAME:
-                    map_blueprint_json_files(args.files, f_update_to_0_17)
-                else:
-                    map_blueprint_book(args.blueprint_book_name, f_update_to_0_17)
-        else:
-            # Blueprint store/load blueprints and blueprint books
-            if args.blueprint_strings:
-                assert not args.blueprint_files, 'Incompatible options -s and -f'
-                assert not args.list_db, 'Incompatible options -s and -l'
-                assert not args.raw, 'Incompatible options -s and -r'
-                for blueprint_string in args.blueprint_strings:
-                    process_blueprint_string(blueprint_string, args.json, args.blueprint_book_name)
-            elif args.blueprint_files:
-                assert not args.list_db, 'Incompatible options -f and -l'
-                assert not args.raw, 'Incompatible options -f and -r'
-                assert args.files, 'No file specified with option -f'
-                for blueprint_file in args.files:
-                    if not args.json:
-                        print('Opening file: ' + blueprint_file)
-                    fp = open(blueprint_file, 'r')
-                    for blueprint_string in fp:
-                        process_blueprint_string(blueprint_string.strip(), args.json, args.blueprint_book_name)
-            elif args.list_db:
-                assert not args.raw, 'Incompatible options -l and -r'
-                if args.blueprint_book_name == NO_BOOK_NAME:
-                    list_db_all()
-                else:
-                    list_db_book(args.blueprint_book_name)
-            elif args.raw:
-                if args.blueprint_book_name == NO_BOOK_NAME:
-                    assert args.files, 'No file or blueprint book specified with option -r'
-                    for json_file in args.files:
-                        assert json_file[-5:] == '.json', 'Expect JSON files with option -r, but got [' +  json_file + ']'
-                        fp = open(json_file, 'r')
-                        # Ensure the most compact JSON format
-                        json_string = json.dumps(json.load(fp), sort_keys=True, separators=(',', ':'))
-                        print(generate_blueprint_string(json_string))
-                        fp.close()
-                else:
-                    print(get_encoded_db_book(args.blueprint_book_name))
-            elif args.json and args.blueprint_book_name != NO_BOOK_NAME:
-                print(get_db_book_in_json(args.blueprint_book_name))
+    if args.match_filename or args.update_to_0_17:
+        # Blueprint edition commands
+        assert not args.blueprint_files, 'Incompatible option -f with a blueprint edition command'
+        assert not args.blueprint_files, 'Incompatible option -s with a blueprint edition command'
+        assert not args.list_db, 'Incompatible option -l with a blueprint edition command'
+        assert not args.raw, 'Incompatible option -r with a blueprint edition command'
+        if args.match_filename:
+            assert args.blueprint_book_name == NO_BOOK_NAME, 'Imcompatible options --match-filename and --book-name'
+            assert args.files, 'Must provide one or several blueprint JSON files with --match-filename'
+            map_blueprint_json_files(args.files, match_filename)
+        elif args.update_to_0_17:
+            assert args.blueprint_book_name != NO_BOOK_NAME or args.files, 'Must provide a book_name or JSON files with option --update-to-0.17'
+            f_update_to_0_17 = lambda info, obj: update_entity_names(info, obj, ENTITY_RENAMING_0_16_TO_0_17)
+            if args.blueprint_book_name == NO_BOOK_NAME:
+                map_blueprint_json_files(args.files, f_update_to_0_17)
             else:
-                print("Error: Wrong arguments")
-                parser.print_help()
-                result = -1
-    except AssertionError as err:
-        print('AssertionError: ' + str(err))
-        result = -1
+                map_blueprint_book(args.blueprint_book_name, f_update_to_0_17)
+    else:
+        # Blueprint store/load blueprints and blueprint books
+        if args.blueprint_strings:
+            assert not args.blueprint_files, 'Incompatible options -s and -f'
+            assert not args.list_db, 'Incompatible options -s and -l'
+            assert not args.raw, 'Incompatible options -s and -r'
+            for blueprint_string in args.blueprint_strings:
+                process_blueprint_string(blueprint_string, args.json, args.blueprint_book_name)
+        elif args.blueprint_files:
+            assert not args.list_db, 'Incompatible options -f and -l'
+            assert not args.raw, 'Incompatible options -f and -r'
+            assert args.files, 'No file specified with option -f'
+            for blueprint_file in args.files:
+                if not args.json:
+                    print('Opening file: ' + blueprint_file)
+                fp = open(blueprint_file, 'r')
+                for blueprint_string in fp:
+                    process_blueprint_string(blueprint_string.strip(), args.json, args.blueprint_book_name)
+        elif args.list_db:
+            assert not args.raw, 'Incompatible options -l and -r'
+            if args.blueprint_book_name == NO_BOOK_NAME:
+                list_db_all()
+            else:
+                list_db_book(args.blueprint_book_name)
+        elif args.raw:
+            if args.blueprint_book_name == NO_BOOK_NAME:
+                assert args.files, 'No file or blueprint book specified with option -r'
+                for json_file in args.files:
+                    assert json_file[-5:] == '.json', 'Expect JSON files with option -r, but got [' +  json_file + ']'
+                    fp = open(json_file, 'r')
+                    # Ensure the most compact JSON format
+                    json_string = json.dumps(json.load(fp), sort_keys=True, separators=(',', ':'))
+                    print(generate_blueprint_string(json_string))
+                    fp.close()
+            else:
+                print(get_encoded_db_book(args.blueprint_book_name))
+        elif args.json and args.blueprint_book_name != NO_BOOK_NAME:
+            print(get_db_book_in_json(args.blueprint_book_name))
+        else:
+            print("Error: Wrong arguments")
+            parser.print_help()
+            result = -1
 
     return result
 
