@@ -3,18 +3,15 @@
 Command line tool to manage blueprint strings from the game Factorio (https://www.factorio.com/)
 """
 
-from __future__ import print_function
 
 import argparse
 import base64
-import ConfigParser
+import configparser
 import json
 import re
 import os
 import sys
 import zlib
-
-
 
 
 CONFIG_FILE = 'config.ini'
@@ -23,7 +20,7 @@ BLUEPRINT_SUPPORTED_VERSIONS = [0]
 
 
 try:
-    config = ConfigParser.RawConfigParser()
+    config = configparser.ConfigParser()
     config.read(os.path.join(SCRIPT_PATH, CONFIG_FILE))
 
     BLUEPRINT_VERSION = config.getint('blueprints', 'version')
@@ -62,16 +59,19 @@ def create_db_directories(db_path = DB_PATH, not_a_book = NO_BOOK_NAME):
         os.makedirs(db_not_a_book_directory)
 
 
-def parse_blueprint_string(blueprint_str):
-    assert int(blueprint_str[0]) in BLUEPRINT_SUPPORTED_VERSIONS, 'Blueprint version number ' + blueprint_str[0] + ' is not among the supported versions: ' + str(BLUEPRINT_SUPPORTED_VERSIONS)
-    return zlib.decompress(base64.b64decode(blueprint_str[1:]))
+def parse_blueprint_string(blueprint_base64):
+    assert isinstance(blueprint_base64, str)
+    version = int(blueprint_base64[0])
+    assert version in BLUEPRINT_SUPPORTED_VERSIONS, 'Blueprint version number ' + str(version) + ' is not among the supported versions: ' + str(BLUEPRINT_SUPPORTED_VERSIONS)
+    return zlib.decompress(base64.b64decode(blueprint_base64[1:])).decode()
 
 
 def generate_blueprint_string(blueprint_json):
-    return str(BLUEPRINT_VERSION) + base64.b64encode(zlib.compress(blueprint_json))
+    assert isinstance(blueprint_json, str)
+    return str(BLUEPRINT_VERSION) + base64.b64encode(zlib.compress(blueprint_json.encode())).decode()
 
 
-blueprint_filename_pattern = re.compile('^(([0-9]{3,}) - )?(.*)\.json$')
+blueprint_filename_pattern = re.compile(r'^(([0-9]{3,}) - )?(.*)\.json$')
 
 
 def parse_blueprint_filename(filename):
@@ -179,7 +179,6 @@ def store_from_string(blueprint_raw_string, book_name = NO_BOOK_NAME, db_path = 
     except Exception as err:
         print('Exception: ' + str(err))
         return -1
-
     return result
 
 
@@ -385,7 +384,7 @@ def main():
             else:
                 map_blueprint_book(args.blueprint_book_name, f_update_to_0_17)
     else:
-        # Blueprint store/load blueprints and blueprint books
+        # Load/store blueprints and blueprint books
         if args.blueprint_strings:
             assert not args.blueprint_files, 'Incompatible options -s and -f'
             assert not args.list_db, 'Incompatible options -s and -l'

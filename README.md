@@ -21,34 +21,37 @@ Import a blueprint string:
 * Raw in command line:
 
 ```
-$ ./blueprints.py -s 0eNp9kDFrwzAQhf+KuVkqTk1I0ZitQ6eOJRhZPZLD1klIclIT/N8r2RRnaLsI7un0vfd0h24Y0Qfi1HbO9aDumxJBfTyM5Y6M41WOdGY9FC1NHkEBJbQggLUtkx6TszqRYxkNIRuUXpseZgHEn/gFajefBCAnSoQrchmmlkfbYcgLGyxGtN1AfJZWmwsxyuds5V2k4lBCZGAtYMpndghoyP+bIlsvedVDPQGD7jBXgvd196l6TdXNhT6K6kjJXHJOAVcMcTE9NPVuXzfNy/6wtap/Q8vlazf+21QdV0WbRFdsfx7/QZ+/AShRje0=
+./blueprints.py -s 0eNp9kDFrwzAQhf+KuVkqTk1I0ZitQ6eOJRhZPZLD1klIclIT/N8r2RRnaLsI7un0vfd0h24Y0Qfi1HbO9aDumxJBfTyM5Y6M41WOdGY9FC1NHkEBJbQggLUtkx6TszqRYxkNIRuUXpseZgHEn/gFajefBCAnSoQrchmmlkfbYcgLGyxGtN1AfJZWmwsxyuds5V2k4lBCZGAtYMpndghoyP+bIlsvedVDPQGD7jBXgvd196l6TdXNhT6K6kjJXHJOAVcMcTE9NPVuXzfNy/6wtap/Q8vlazf+21QdV0WbRFdsfx7/QZ+/AShRje0=
 ```
 
 * From a file (one blueprint string per line):
 
-`$ ./blueprints.py -f examples/test_blueprint_book.txt`
+`./blueprints.py -f tests/examples/blueprint_book.txt`
 
 List blueprint database content:
 
 ```
-$ ./blueprints.py -l
+./blueprints.py -l
 Blueprint Book: My Book/
  >> 000 - Science. It works, Bitches.json
 ```
 
 Copy blueprint string to clipboard for import in Factorio:
 
-`$ ./blueprints.py --raw -b "My Book" | clip`
+` ./blueprints.py --raw -b "My Book" | clip`
 
 More commands:
 
-`$ ./blueprints.py --help`
+`./blueprints.py --help`
 
 
 ## Requirements
 
-* __Python 2.7.x__: http://www.python.org/download/
+* __Python 3.x__: http://www.python.org/download/
 
+## Unit Tests
+
+`python -m unittest -v`
 
 ## License
 
