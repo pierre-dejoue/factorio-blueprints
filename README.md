@@ -3,6 +3,8 @@ Factorio Blueprints
 
 A command line tool to parse and manage blueprint strings from the game **[Factorio](https://www.factorio.com/)**.
 
+![Python3](http://img.shields.io/badge/python-3-blue.svg?v=1)
+[![License](http://img.shields.io/:license-mit-blue.svg?style=flat-square)](./LICENSE)
 
 ## Database
 
@@ -13,7 +15,6 @@ Blueprint books are stored as folders, containing one file per individual bluepr
 Single blueprints (not part of a blueprint book) are stored in a special folder named `Not a blueprint book`.
 
 It is advised to manage the database folder as a separate git repository.
-
 
 ## Usage
 
@@ -49,10 +50,10 @@ More commands:
 
 * __Python 3.x__: http://www.python.org/download/
 
+Currently there are no packages required. Should the need arise:
+
+`pip install -r requirements.txt`
+
 ## Unit Tests
 
 `python -m unittest -v`
-
-## License
-
-[![License](http://img.shields.io/:license-mit-blue.svg?style=flat-square)](./LICENSE)
