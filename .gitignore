@@ -1,4 +1,4 @@
 __pycache__/
-factorio-blueprints-db
-raw
-
+.pylint*/
+factorio-blueprints-db/
+misc/

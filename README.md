@@ -1,50 +1,43 @@
 Factorio Blueprints
 ===================
 
-A command line tool to parse and manage blueprint strings from the game **[Factorio](https://www.factorio.com/)**.
+A command line tool to parse and manage blueprint exchange strings from the game **[Factorio](https://www.factorio.com/)**.
 
 ![Python3](http://img.shields.io/badge/python-3-blue.svg?v=1)
 [![License](http://img.shields.io/:license-mit-blue.svg?style=flat-square)](./LICENSE)
 
-## Database
-
-The script will store blueprints as JSON files in a folder referred to as the database. By default the database is located in `./factorio-blueprints-db` relatively to this repository.
-
-Blueprint books are stored as folders, containing one file per individual blueprint.
-
-Single blueprints (not part of a blueprint book) are stored in a special folder named `Not a blueprint book`.
-
-It is advised to manage the database folder as a separate git repository.
-
 ## Usage
 
-Import a blueprint string:
-* Raw in command line:
+Read a blueprint exchange string:
+
+* Raw string directly in the command line:
 
 ```
 ./blueprints.py -s 0eNp9kDFrwzAQhf+KuVkqTk1I0ZitQ6eOJRhZPZLD1klIclIT/N8r2RRnaLsI7un0vfd0h24Y0Qfi1HbO9aDumxJBfTyM5Y6M41WOdGY9FC1NHkEBJbQggLUtkx6TszqRYxkNIRuUXpseZgHEn/gFajefBCAnSoQrchmmlkfbYcgLGyxGtN1AfJZWmwsxyuds5V2k4lBCZGAtYMpndghoyP+bIlsvedVDPQGD7jBXgvd196l6TdXNhT6K6kjJXHJOAVcMcTE9NPVuXzfNy/6wtap/Q8vlazf+21QdV0WbRFdsfx7/QZ+/AShRje0=
 ```
 
-* From a file (one blueprint string per line):
+* From a file (one exchange string per line):
 
 `./blueprints.py -f tests/examples/blueprint_book.txt`
 
-List blueprint database content:
+By default the script will parse the blueprint exchange string and display a summary of its contents:
 
 ```
-./blueprints.py -l
-Blueprint Book: My Book/
- >> 000 - Science. It works, Bitches.json
+$ python ./blueprints.py -f ./factorio-blueprints-db/blueprints/base_game/railway.txt
+Opening file: ./factorio-blueprints-db/blueprints/base_game/railway.txt
+Book: Railway
+Version: 1.1.110
+Contents:
+  Blueprint: Ore Station - In 1-2 train
+  Blueprint: Ore Station - Out 1-2 train
+  Blueprint: Straight 2-way block
+  Blueprint: T for  two-way rails
+  Blueprint: Waiting Area for 1-2 trains
 ```
-
-Copy blueprint string to clipboard for import in Factorio:
-
-` ./blueprints.py --raw -b "My Book" | clip`
 
 More commands:
 
 `./blueprints.py --help`
-
 
 ## Requirements
 
