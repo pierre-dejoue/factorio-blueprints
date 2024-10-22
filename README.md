@@ -28,11 +28,11 @@ Opening file: ./factorio-blueprints-db/blueprints/base_game/railway.txt
 Book: Railway
 Version: 1.1.110
 Contents:
-  Blueprint: Ore Station - In 1-2 train
-  Blueprint: Ore Station - Out 1-2 train
-  Blueprint: Straight 2-way block
-  Blueprint: T for  two-way rails
-  Blueprint: Waiting Area for 1-2 trains
+  #000 Blueprint: Ore Station - In 1-2 train
+  #001 Blueprint: Ore Station - Out 1-2 train
+  #002 Blueprint: Straight 2-way block
+  #003 Blueprint: T for  two-way rails
+  #004 Blueprint: Waiting Area for 1-2 trains
 ```
 
 More commands:

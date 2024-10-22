@@ -81,27 +81,44 @@ def pretty_print_json(blueprint_json_str: str) -> None:
     json.dump(blueprint_obj, sys.stdout, sort_keys=True, indent=2, separators=(',', ': '))
 
 
+def read_blueprint_book_name(book_obj: dict) -> None:
+    book_name = book_obj['blueprint_book']['label'] if 'label' in book_obj['blueprint_book'] else 'no-name'
+    return book_name
+
+
+def read_blueprint_name(blueprint_obj: dict) -> None:
+    blueprint_name = blueprint_obj['blueprint']['label'] if 'label' in blueprint_obj['blueprint'].keys() else 'no-name'
+    return blueprint_name
+
+
 def info_from_blueprint_book(book_obj: dict) -> None:
-    book_name = book_obj['blueprint_book']['label'] if 'label' in book_obj['blueprint_book'].keys() else 'no-name'
+    book_name = read_blueprint_book_name(book_obj)
     book_version = book_obj['blueprint_book']['version']
     print('Book: ' + book_name)
     print('Version: ' + parse_game_version(book_version))
     print('Contents:')
-    for blueprint_elt in book_obj['blueprint_book']['blueprints']:
-        blueprint_obj = { 'blueprint': blueprint_elt['blueprint'] }
-        blueprint_index = blueprint_elt['index'] if 'index' in blueprint_elt else -1
-        NO_VERSION = False
-        INDENTATION = 2
-        info_from_single_blueprint(blueprint_obj, blueprint_index, NO_VERSION, INDENTATION)
+    book_contents = book_obj['blueprint_book']['blueprints']
+    for blueprint_elt in book_contents:
+        blueprint_elt_index = blueprint_elt['index'] if 'index' in blueprint_elt else -1
+        blueprint_elt_index_str = '#{0:03d}'.format(blueprint_elt_index) if blueprint_elt_index >= 0 else '#'
+        blueprint_elt_type = 'Unknown'
+        blueprint_elt_descr = ''
+        if 'blueprint_book' in blueprint_elt:
+            blueprint_elt_type = 'Blueprint Book'
+            blueprint_elt_descr = read_blueprint_book_name(blueprint_elt)
+        elif 'blueprint' in blueprint_elt:
+            blueprint_elt_type = 'Blueprint'
+            blueprint_elt_descr = read_blueprint_name(blueprint_elt)
+        else:
+            blueprint_elt_descr = str(blueprint_elt.keys())
+        print('  {0} {1}: {2}'.format(blueprint_elt_index_str, blueprint_elt_type, blueprint_elt_descr))
 
 
-def info_from_single_blueprint(blueprint_obj: dict, blueprint_index: int = -1, print_version: bool = True, indent: int = 0) -> None:
-    blueprint_name = blueprint_obj['blueprint']['label'] if 'label' in blueprint_obj['blueprint'].keys() else 'no-name'
+def info_from_single_blueprint(blueprint_obj: dict, blueprint_index: int = -1) -> None:
     blueprint_version = blueprint_obj['blueprint']['version']
-    blueprint_index_str = '#{0:03d} '.format(blueprint_index) if blueprint_index >= 0 else ''
-    print(str(indent * ' ') + 'Blueprint {0}: {1}'.format(blueprint_index_str, blueprint_name))
-    if print_version:
-        print(str(indent * ' ') + 'Version: ' +  parse_game_version(blueprint_version))
+    blueprint_index_str = '#{0:03d}'.format(blueprint_index) if blueprint_index >= 0 else '#'
+    print('Blueprint: ' + read_blueprint_name(blueprint_obj))
+    print('Version: ' +  parse_game_version(blueprint_version))
 
 
 def info_from_blueprint_string(blueprint_json_str: str) -> int:
