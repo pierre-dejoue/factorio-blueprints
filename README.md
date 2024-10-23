@@ -57,6 +57,49 @@ G51wcdME5VxFntiTkJg0QSQ2XwQ3YVqZyUGg5DPMuOKhqtB5i8MECp9EKsBMQ5FYl7pPhnZgmtgI4JOi
 Jf/Dnf6+9+7Y7hGfiZ3vG/OqMNWPbxdIFAnue/Wna2az7aPjH4jjrv70Pt99du499thKqtEVZVZWxoghiHcyQp78K8Sif
 ```
 
+### Recursion on blueprint books
+
+By default the script only parses the first level of a blueprint book:
+
+```
+$ python ./blueprints.py -f squiggles_in_a_book.txt
+Book: Squiggles in a Book
+Version: 1.1.104
+Contents:
+  #000 Blueprint Book: Yellow Mining/Smelting (small E-Poles only)
+  #001 Blueprint Book: Science!
+  #002 Blueprint Book: Malls
+```
+
+For blueprint exchange string with multiple levels of books within book, use the `-l` option to set a maximum recursion level higher than 0:
+
+```
+$ python ./blueprints.py -f squiggles_in_a_book.txt -l 1
+Book: Squiggles in a Book
+Version: 1.1.104
+Contents:
+  #000 Blueprint Book: Yellow Mining/Smelting (small E-Poles only)
+    #000 Blueprint: Smelter Array (Small E-Poles)
+    #001 Blueprint: Steel Smelterino V1
+    #002 Blueprint: Diagonal Miners
+    #003 Blueprint Book: Diagonal Mining
+  #001 Blueprint Book: Science!
+    #000 Blueprint: Automation/Logistic Science (90/m)
+    #001 Blueprint: Chemical Science Expanded (90/m)
+    #002 Blueprint: Military Science (90/m)
+    #003 Blueprint: Production Science (90/m)
+    #004 Blueprint: Utility Science (90/m)
+    #007 Blueprint: Chemical Science (45/min)
+    #010 Blueprint: Labs (pre-space)
+  #002 Blueprint Book: Malls
+    #000 Blueprint: Logistics Mall
+    #001 Blueprint: Ore/Steam Mall
+    #002 Blueprint: Power/Circuit/Train Mall
+    #003 Blueprint: Power/Circuit/LTN Mall
+    #004 Blueprint: Oil/Pipe Mall
+    #005 Blueprint: Nuclear Mall
+```
+
 ### More commands
 
 `python ./blueprints.py --help`

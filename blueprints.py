@@ -96,12 +96,9 @@ def read_blueprint_name(blueprint_obj: dict) -> None:
     return blueprint_name
 
 
-def info_from_blueprint_book(book_obj: dict) -> None:
-    book_name = read_blueprint_book_name(book_obj)
-    book_version = book_obj['blueprint_book']['version']
-    print('Book: ' + book_name)
-    print('Version: ' + parse_game_version(book_version))
-    print('Contents:')
+def print_blueprint_book_contents(book_obj: dict, max_recursion_level: int = 0, recursion_level: int = 0) -> None:
+    assert 'blueprint_book' in book_obj, 'Only accept blueprint book as input'
+    INDENTATION_PER_LEVEL = 2
     book_contents = book_obj['blueprint_book']['blueprints']
     for blueprint_elt in book_contents:
         blueprint_elt_index = blueprint_elt['index'] if 'index' in blueprint_elt else -1
@@ -116,7 +113,20 @@ def info_from_blueprint_book(book_obj: dict) -> None:
             blueprint_elt_descr = read_blueprint_name(blueprint_elt)
         else:
             blueprint_elt_descr = str(blueprint_elt.keys())
-        print('  {0} {1}: {2}'.format(blueprint_elt_index_str, blueprint_elt_type, blueprint_elt_descr))
+        print('{0}{1} {2}: {3}'.format((INDENTATION_PER_LEVEL * (recursion_level + 1) * ' '), blueprint_elt_index_str, blueprint_elt_type, blueprint_elt_descr))
+        # Recursive call on blueprint books
+        if 'blueprint_book' in blueprint_elt and recursion_level < max_recursion_level:
+            print_blueprint_book_contents(blueprint_elt, max_recursion_level, recursion_level + 1)
+
+
+def info_from_blueprint_book(book_obj: dict, max_recursion_level: int = 0) -> None:
+    assert 'blueprint_book' in book_obj, 'Only accept blueprint book as input'
+    book_name = read_blueprint_book_name(book_obj)
+    book_version = book_obj['blueprint_book']['version']
+    print('Book: ' + book_name)
+    print('Version: ' + parse_game_version(book_version))
+    print('Contents:')
+    print_blueprint_book_contents(book_obj, max_recursion_level)
 
 
 def info_from_single_blueprint(blueprint_obj: dict, blueprint_index: int = -1) -> None:
@@ -126,10 +136,10 @@ def info_from_single_blueprint(blueprint_obj: dict, blueprint_index: int = -1) -
     print('Version: ' +  parse_game_version(blueprint_version))
 
 
-def info_from_blueprint_object(blueprint_obj: dict) -> int:
+def info_from_blueprint_object(blueprint_obj: dict, max_recursion_level: int = 0) -> int:
     result = 0
     if 'blueprint_book' in blueprint_obj:
-        info_from_blueprint_book(blueprint_obj)
+        info_from_blueprint_book(blueprint_obj, max_recursion_level)
     elif 'blueprint' in blueprint_obj:
         info_from_single_blueprint(blueprint_obj)
     else:
@@ -236,7 +246,7 @@ def process_blueprint_json_string(blueprint_json_str: str, args: argparse.Namesp
             print(generate_bp_exchange_string_from_json_object(blueprint_obj))
         else:
             # By default, print information about the blueprint
-            info_from_blueprint_object(blueprint_obj)
+            info_from_blueprint_object(blueprint_obj, args.max_recursion_level)
 
 
 def main():
@@ -248,6 +258,7 @@ def main():
     parser.add_argument('--json', dest='json', action='store_true', help='Print out the blueprints as JSON string')
     parser.add_argument('--raw', dest='raw', action='store_true', help='Print out the decoded exchange string')
     parser.add_argument('--exchange', dest='exchange', action='store_true', help='Print out the exchange string')
+    parser.add_argument('-l', '--max-recursion-level', metavar='LEVEL', type=int, dest='max_recursion_level', default=0, help='Max recursion level while traversing blueprint books. Default: 0 (only the first level)')
     parser.add_argument('--update-to-0.17', dest='update_to_0_17', action='store_true', help='Update some entity names for 0.17')
     args = parser.parse_args()
 
