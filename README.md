@@ -104,6 +104,16 @@ Contents:
 
 `python ./blueprints.py --help`
 
+## Module
+
+Import the script as a module with some useful functions:
+
+* Encode/Decode the exchange string
+* Parse the blueprint version
+* Parse the blueprint name
+
+See the [unit tests](tests/test_blueprints.py) for code examples
+
 ## Requirements
 
 * __Python 3.x__: http://www.python.org/download/

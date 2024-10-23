@@ -65,13 +65,18 @@ def generate_bp_exchange_string(blueprint_json: str) -> str:
     return str(EXCHANGE_STRINGS_DEFAULT_VERSION) + base64.b64encode(zlib.compress(blueprint_json.encode())).decode()
 
 
+def parse_bp_exchange_string_as_json_object(blueprint_base64: str) -> dict:
+    blueprint_json_str = parse_bp_exchange_string(blueprint_base64)
+    return json.loads(blueprint_json_str)
+
+
 def generate_bp_exchange_string_from_json_object(blueprint_obj: dict) -> str:
     # Ensure the most compact JSON format
     json_str = json.dumps(blueprint_obj, sort_keys=True, separators=(',', ':'))
     return generate_bp_exchange_string(json_str)
 
 
-def parse_game_version(version: int):
+def decode_game_version(version: int):
     version_major = (version & 0x0FFFF000000000000) >> 48
     version_minor = (version & 0x00000FFFF00000000) >> 32
     version_patch = (version & 0x000000000FFFF0000) >> 16
@@ -82,18 +87,24 @@ def parse_game_version(version: int):
     return version_str
 
 
+def parse_game_version(blueprint_obj: dict) -> str:
+    blueprint_subobj = {}
+    for key in ['blueprint', 'blueprint_book']:
+        if key in blueprint_obj:
+            blueprint_subobj = blueprint_obj[key]
+    return decode_game_version(blueprint_subobj['version']) if 'version' in blueprint_subobj else 'unknonwn'
+
+
+def parse_blueprint_name(blueprint_obj: dict) -> str:
+    blueprint_subobj = {}
+    for key in ['blueprint', 'blueprint_book']:
+        if key in blueprint_obj:
+            blueprint_subobj = blueprint_obj[key]
+    return blueprint_subobj['label'] if 'label' in blueprint_subobj else 'no-name'
+
+
 def pretty_print_json(blueprint_obj: dict, fp = sys.stdout) -> None:
     json.dump(blueprint_obj, fp, sort_keys=True, indent=2, separators=(',', ': '))
-
-
-def read_blueprint_book_name(book_obj: dict) -> None:
-    book_name = book_obj['blueprint_book']['label'] if 'label' in book_obj['blueprint_book'] else 'no-name'
-    return book_name
-
-
-def read_blueprint_name(blueprint_obj: dict) -> None:
-    blueprint_name = blueprint_obj['blueprint']['label'] if 'label' in blueprint_obj['blueprint'].keys() else 'no-name'
-    return blueprint_name
 
 
 def print_blueprint_book_contents(book_obj: dict, max_recursion_level: int = 0, recursion_level: int = 0) -> None:
@@ -104,13 +115,11 @@ def print_blueprint_book_contents(book_obj: dict, max_recursion_level: int = 0, 
         blueprint_elt_index = blueprint_elt['index'] if 'index' in blueprint_elt else -1
         blueprint_elt_index_str = '#{0:03d}'.format(blueprint_elt_index) if blueprint_elt_index >= 0 else '#'
         blueprint_elt_type = 'Unknown'
-        blueprint_elt_descr = ''
+        blueprint_elt_descr = parse_blueprint_name(blueprint_elt)
         if 'blueprint_book' in blueprint_elt:
             blueprint_elt_type = 'Blueprint Book'
-            blueprint_elt_descr = read_blueprint_book_name(blueprint_elt)
         elif 'blueprint' in blueprint_elt:
             blueprint_elt_type = 'Blueprint'
-            blueprint_elt_descr = read_blueprint_name(blueprint_elt)
         else:
             blueprint_elt_descr = str(blueprint_elt.keys())
         print('{0}{1} {2}: {3}'.format((INDENTATION_PER_LEVEL * (recursion_level + 1) * ' '), blueprint_elt_index_str, blueprint_elt_type, blueprint_elt_descr))
@@ -120,20 +129,21 @@ def print_blueprint_book_contents(book_obj: dict, max_recursion_level: int = 0, 
 
 
 def info_from_blueprint_book(book_obj: dict, max_recursion_level: int = 0) -> None:
-    assert 'blueprint_book' in book_obj, 'Only accept blueprint book as input'
-    book_name = read_blueprint_book_name(book_obj)
-    book_version = book_obj['blueprint_book']['version']
+    assert 'blueprint_book' in book_obj, 'Not a blueprint book'
+    book_name = parse_blueprint_name(book_obj)
+    book_version = parse_game_version(book_obj)
     print('Book: ' + book_name)
-    print('Version: ' + parse_game_version(book_version))
+    print('Version: ' + book_version)
     print('Contents:')
     print_blueprint_book_contents(book_obj, max_recursion_level)
 
 
 def info_from_single_blueprint(blueprint_obj: dict, blueprint_index: int = -1) -> None:
-    blueprint_version = blueprint_obj['blueprint']['version']
-    blueprint_index_str = '#{0:03d}'.format(blueprint_index) if blueprint_index >= 0 else '#'
-    print('Blueprint: ' + read_blueprint_name(blueprint_obj))
-    print('Version: ' +  parse_game_version(blueprint_version))
+    assert 'blueprint' in blueprint_obj, 'Not a blueprint'
+    blueprint_name = parse_blueprint_name(blueprint_obj)
+    blueprint_version = parse_game_version(blueprint_obj)
+    print('Blueprint: ' + blueprint_name)
+    print('Version: ' + blueprint_version)
 
 
 def info_from_blueprint_object(blueprint_obj: dict, max_recursion_level: int = 0) -> int:
@@ -143,7 +153,7 @@ def info_from_blueprint_object(blueprint_obj: dict, max_recursion_level: int = 0
     elif 'blueprint' in blueprint_obj:
         info_from_single_blueprint(blueprint_obj)
     else:
-        print('ParsingError: Could not identify the type of blueprint ' + blueprint_obj.keys())
+        print('ParsingError: Could not identify the type of blueprint ' + str(blueprint_obj.keys()))
         result = -1
     return result
 
