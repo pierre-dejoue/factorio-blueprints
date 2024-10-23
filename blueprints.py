@@ -22,6 +22,12 @@ from collections.abc import Callable
 CONFIG_FILE = 'config.ini'
 SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 EXCHANGE_STRINGS_SUPPORTED_VERSIONS = [0]
+ALL_BLUEPRINT_TYPES = {
+    'blueprint':              'Blueprint',
+    'blueprint_book':         'Blueprint Book',
+    'deconstruction_planner': 'Deconstruction Planner',
+    'upgrade_planner':        'Upgrade Planner',
+}
 
 
 try:
@@ -93,7 +99,7 @@ def decode_game_version(version: int):
 
 def parse_game_version(blueprint_obj: dict) -> str:
     blueprint_subobj = {}
-    for key in ['blueprint', 'blueprint_book']:
+    for key in ALL_BLUEPRINT_TYPES.keys():
         if key in blueprint_obj:
             blueprint_subobj = blueprint_obj[key]
     return decode_game_version(blueprint_subobj['version']) if 'version' in blueprint_subobj else 'unknonwn'
@@ -101,10 +107,19 @@ def parse_game_version(blueprint_obj: dict) -> str:
 
 def parse_blueprint_name(blueprint_obj: dict) -> str:
     blueprint_subobj = {}
-    for key in ['blueprint', 'blueprint_book']:
+    for key in ALL_BLUEPRINT_TYPES.keys():
         if key in blueprint_obj:
             blueprint_subobj = blueprint_obj[key]
+            break
     return blueprint_subobj['label'] if 'label' in blueprint_subobj else 'no-name'
+
+
+def parse_blueprint_type(blueprint_obj: dict) -> str:
+    blueprint_type = str(blueprint_obj.keys())
+    for key in ALL_BLUEPRINT_TYPES.keys():
+        if key in blueprint_obj:
+            blueprint_type = ALL_BLUEPRINT_TYPES[key]
+    return blueprint_type
 
 
 def pretty_print_json(blueprint_obj: dict, fp = sys.stdout) -> None:
@@ -118,14 +133,8 @@ def print_blueprint_book_contents(book_obj: dict, max_recursion_level: int = 0, 
     for blueprint_elt in book_contents:
         blueprint_elt_index = blueprint_elt['index'] if 'index' in blueprint_elt else -1
         blueprint_elt_index_str = '#{0:03d}'.format(blueprint_elt_index) if blueprint_elt_index >= 0 else '#'
-        blueprint_elt_type = 'Unknown'
+        blueprint_elt_type = parse_blueprint_type(blueprint_elt)
         blueprint_elt_descr = parse_blueprint_name(blueprint_elt)
-        if 'blueprint_book' in blueprint_elt:
-            blueprint_elt_type = 'Blueprint Book'
-        elif 'blueprint' in blueprint_elt:
-            blueprint_elt_type = 'Blueprint'
-        else:
-            blueprint_elt_descr = str(blueprint_elt.keys())
         print('{0}{1} {2}: {3}'.format((INDENTATION_PER_LEVEL * (recursion_level + 1) * ' '), blueprint_elt_index_str, blueprint_elt_type, blueprint_elt_descr))
         # Recursive call on blueprint books
         if 'blueprint_book' in blueprint_elt and recursion_level < max_recursion_level:
@@ -136,17 +145,19 @@ def info_from_blueprint_book(book_obj: dict, max_recursion_level: int = 0) -> No
     assert 'blueprint_book' in book_obj, 'Not a blueprint book'
     book_name = parse_blueprint_name(book_obj)
     book_version = parse_game_version(book_obj)
-    print('Book: ' + book_name)
+    print('Blueprint Book: ' + book_name)
     print('Version: ' + book_version)
     print('Contents:')
     print_blueprint_book_contents(book_obj, max_recursion_level)
 
 
-def info_from_single_blueprint(blueprint_obj: dict, blueprint_index: int = -1) -> None:
-    assert 'blueprint' in blueprint_obj, 'Not a blueprint'
+def info_from_single_blueprint(blueprint_obj: dict) -> None:
     blueprint_name = parse_blueprint_name(blueprint_obj)
+    blueprint_type = parse_blueprint_type(blueprint_obj)
     blueprint_version = parse_game_version(blueprint_obj)
     print('Blueprint: ' + blueprint_name)
+    if 'blueprint' not in blueprint_obj:
+        print('Type: ' + blueprint_type)
     print('Version: ' + blueprint_version)
 
 
@@ -155,6 +166,10 @@ def info_from_blueprint_object(blueprint_obj: dict, max_recursion_level: int = 0
     if 'blueprint_book' in blueprint_obj:
         info_from_blueprint_book(blueprint_obj, max_recursion_level)
     elif 'blueprint' in blueprint_obj:
+        info_from_single_blueprint(blueprint_obj)
+    elif 'deconstruction_planner' in blueprint_obj:
+        info_from_single_blueprint(blueprint_obj)
+    elif 'upgrade_planner' in blueprint_obj:
         info_from_single_blueprint(blueprint_obj)
     else:
         print('ParsingError: Could not identify the type of blueprint ' + str(blueprint_obj.keys()))
