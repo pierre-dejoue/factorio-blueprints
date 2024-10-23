@@ -65,6 +65,12 @@ def generate_bp_exchange_string(blueprint_json: str) -> str:
     return str(EXCHANGE_STRINGS_DEFAULT_VERSION) + base64.b64encode(zlib.compress(blueprint_json.encode())).decode()
 
 
+def generate_bp_exchange_string_from_json_object(blueprint_obj: dict) -> str:
+    # Ensure the most compact JSON format
+    json_str = json.dumps(blueprint_obj, sort_keys=True, separators=(',', ':'))
+    return generate_bp_exchange_string(json_str)
+
+
 def parse_game_version(version: int):
     version_major = (version & 0x0FFFF000000000000) >> 48
     version_minor = (version & 0x00000FFFF00000000) >> 32
@@ -122,14 +128,25 @@ def info_from_single_blueprint(blueprint_obj: dict, blueprint_index: int = -1) -
 
 def info_from_blueprint_object(blueprint_obj: dict) -> int:
     result = 0
-    if 'blueprint_book' in blueprint_obj.keys():
+    if 'blueprint_book' in blueprint_obj:
         info_from_blueprint_book(blueprint_obj)
-    elif 'blueprint' in blueprint_obj.keys():
+    elif 'blueprint' in blueprint_obj:
         info_from_single_blueprint(blueprint_obj)
     else:
         print('ParsingError: Could not identify the type of blueprint ' + blueprint_obj.keys())
         result = -1
     return result
+
+
+def find_index_in_blueprint_book(blueprint_obj: dict, index: int) -> dict:
+    if 'blueprint_book' not in blueprint_obj:
+        return None
+    book_contents = blueprint_obj['blueprint_book']['blueprints']
+    for blueprint_elt in book_contents:
+        blueprint_elt_index = blueprint_elt['index'] if 'index' in blueprint_elt else -1
+        if blueprint_elt_index == index:
+            return blueprint_elt
+    return None
 
 
 def get_book_in_json(book_name: str, contents: str, version: int, active_index: int = 0) -> str:
@@ -144,9 +161,7 @@ def get_book_in_json(book_name: str, contents: str, version: int, active_index: 
           'version': version
         }
     }
-    # Ensure the most compact JSON format
-    json_string = json.dumps(blueprint_book, sort_keys=True, separators=(',', ':'))
-    return json_string
+    return generate_bp_exchange_string_from_json_object(blueprint_book)
 
 
 def update_entity_names(blueprint_obj: dict, entity_mapping: dict) -> bool:
@@ -194,9 +209,7 @@ def map_blueprint_object(blueprint_obj: dict, process: ProcessBlueprint, json_pr
         if json_pretty_print:
             json.dump(blueprint_obj, sys.stdout, sort_keys=True, indent=2, separators=(',', ': '))
         else:
-            # Ensure the most compact JSON format
-            json_string = json.dumps(blueprint_obj, sort_keys=True, separators=(',', ':'))
-            print(generate_bp_exchange_string(json_string))
+            print(generate_bp_exchange_string_from_json_object(blueprint_obj))
     else:
         print('Not modified')
 
@@ -205,26 +218,36 @@ def process_blueprint_json_string(blueprint_json_str: str, args: argparse.Namesp
     if args.raw:
         assert not args.json,           'Incompatible options --raw and --json'
         assert not args.update_to_0_17, 'Incompatible options --raw and --update-to-0.17'
+        assert not args.index,          'Incompatible options --raw and --index'
         print(blueprint_json_str)
     else:
         blueprint_obj = json.loads(blueprint_json_str)
-        if args.update_to_0_17:
+        if args.index is not None:
+            blueprint_obj = find_index_in_blueprint_book(blueprint_obj, args.index)
+        if not blueprint_obj:
+            print('Not found')
+        elif args.update_to_0_17:
             def func_update_to_0_17(obj: dict) -> bool:
                 return update_entity_names(obj, ENTITY_RENAMING_0_16_TO_0_17)
             map_blueprint_object(blueprint_obj, func_update_to_0_17, args.json)
         elif args.json:
             pretty_print_json(blueprint_obj)
+        elif args.exchange:
+            print(generate_bp_exchange_string_from_json_object(blueprint_obj))
         else:
+            # By default, print information about the blueprint
             info_from_blueprint_object(blueprint_obj)
 
 
 def main():
     result = 0
-    parser = argparse.ArgumentParser(description='Manage blueprint strings from the game Factorio (https://www.factorio.com/)')
+    parser = argparse.ArgumentParser(description='Manage blueprint exchange strings from the game Factorio (https://www.factorio.com/)')
     parser.add_argument('-s', '--from-string', metavar='EXCHANGE_STRING', dest='bp_exchange_string', nargs=1, help='From a blueprint exchange string')
     parser.add_argument('-f', '--from-file', metavar='FILE', dest='blueprint_file', nargs=1, help='From a file with one blueprint exchange string per line')
+    parser.add_argument('--index', metavar='INDEX_IN_BOOK', type=int, dest='index', help='Index of an element in a blueprint book')
     parser.add_argument('--json', dest='json', action='store_true', help='Print out the blueprints as JSON string')
     parser.add_argument('--raw', dest='raw', action='store_true', help='Print out the decoded exchange string')
+    parser.add_argument('--exchange', dest='exchange', action='store_true', help='Print out the exchange string')
     parser.add_argument('--update-to-0.17', dest='update_to_0_17', action='store_true', help='Update some entity names for 0.17')
     args = parser.parse_args()
 
@@ -236,7 +259,7 @@ def main():
     elif args.blueprint_file:
         assert not args.bp_exchange_string, 'Incompatible options -f and -s'
         blueprint_file = args.blueprint_file[0]
-        print('Opening file: ' + blueprint_file)
+        #print('Opening file: ' + blueprint_file)
         with open(blueprint_file, 'rt') as f:
             for bp_exchange_string in f:
                 blueprint_json_str = parse_bp_exchange_string(bp_exchange_string.strip())
