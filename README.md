@@ -22,9 +22,18 @@ Read a blueprint exchange string from...
 
 `./blueprints.py -f ./tests/examples/blueprint_book.txt`
 
+### Get the Blueprint/Game Version
+
+Use the `--version` option to output only the blueprint version (that is, the version of Factorio that generated the blueprint)
+
+```
+$ ./blueprints.py -f ./tests/examples/oil_processing_1_v1.1.8.txt --version
+1.1.8
+```
+
 ### Parsing
 
-By default the script will parse the blueprint exchange string and print a summary of its contents:
+By default, when passed no option, the script will parse the blueprint exchange string and print a summary of its contents:
 
 ```
 $ python ./blueprints.py -f railway.txt
@@ -38,7 +47,7 @@ Contents:
   #004 Blueprint: Waiting Area for 1-2 trains
 ```
 
-If the exchange string is a blueprint book, one can select a page a of the book from its index. From the example above, index 3 selects the "T" junction blueprint:
+If the exchange string is a blueprint book, one can select a page a of the book from its index. From the example above, index `3` will select the "T" junction blueprint:
 
 ```
 $ python ./blueprints.py -f railway.txt --index 3
@@ -46,7 +55,7 @@ Blueprint: T for  two-way rails
 Version: 1.1.110
 ```
 
-Finally one can extract the exchange string for the "T" junction blueprint:
+Finally one can extract an exchange string for the "T" junction blueprint:
 
 ```
 $ python ./blueprints.py -f railway.txt --index 3 --exchange
