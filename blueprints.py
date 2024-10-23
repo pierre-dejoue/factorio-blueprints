@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 """
-Command line tool to manage blueprint strings from the game Factorio (https://www.factorio.com/)
+Module and command line tool to manage blueprint exchange strings from the game Factorio (https://www.factorio.com/)
 """
+__author__ = "Pierre DEJOUE"
+__copyright__ = "Copyright (c) 2019 Pierre DEJOUE"
+__license__ = "MIT License"
+__version__ = "0.1"
 
 
 import argparse
