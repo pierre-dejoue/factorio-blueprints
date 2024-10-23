@@ -12,7 +12,6 @@ import argparse
 import base64
 import configparser
 import json
-import re
 import os
 import sys
 import zlib
@@ -91,15 +90,15 @@ def decode_game_version(version: int):
     version_minor = (version & 0x00000FFFF00000000) >> 32
     version_patch = (version & 0x000000000FFFF0000) >> 16
     version_dev   = (version & 0x0000000000000FFFF)
-    version_str = '{}.{}.{}'.format(version_major, version_minor, version_patch)
+    version_str = f'{version_major}.{version_minor}.{version_patch}'
     if version_dev != 0:
-        version_str = '{}.{}'.format(version_str, version_dev)
+        version_str = f'{version_str}.{version_dev}'
     return version_str
 
 
 def parse_game_version(blueprint_obj: dict) -> str:
     blueprint_subobj = {}
-    for key in ALL_BLUEPRINT_TYPES.keys():
+    for key in ALL_BLUEPRINT_TYPES:
         if key in blueprint_obj:
             blueprint_subobj = blueprint_obj[key]
     return decode_game_version(blueprint_subobj['version']) if 'version' in blueprint_subobj else 'unknonwn'
@@ -107,7 +106,7 @@ def parse_game_version(blueprint_obj: dict) -> str:
 
 def parse_blueprint_name(blueprint_obj: dict) -> str:
     blueprint_subobj = {}
-    for key in ALL_BLUEPRINT_TYPES.keys():
+    for key in ALL_BLUEPRINT_TYPES:
         if key in blueprint_obj:
             blueprint_subobj = blueprint_obj[key]
             break
@@ -116,9 +115,9 @@ def parse_blueprint_name(blueprint_obj: dict) -> str:
 
 def parse_blueprint_type(blueprint_obj: dict) -> str:
     blueprint_type = str(blueprint_obj.keys())
-    for key in ALL_BLUEPRINT_TYPES.keys():
+    for key, bp_type in ALL_BLUEPRINT_TYPES.items():
         if key in blueprint_obj:
-            blueprint_type = ALL_BLUEPRINT_TYPES[key]
+            blueprint_type = bp_type
     return blueprint_type
 
 
@@ -128,14 +127,14 @@ def pretty_print_json(blueprint_obj: dict, fp = sys.stdout) -> None:
 
 def print_blueprint_book_contents(book_obj: dict, max_recursion_level: int = 0, recursion_level: int = 0) -> None:
     assert 'blueprint_book' in book_obj, 'Only accept blueprint book as input'
-    INDENTATION_PER_LEVEL = 2
     book_contents = book_obj['blueprint_book']['blueprints']
     for blueprint_elt in book_contents:
         blueprint_elt_index = blueprint_elt['index'] if 'index' in blueprint_elt else -1
-        blueprint_elt_index_str = '#{0:03d}'.format(blueprint_elt_index) if blueprint_elt_index >= 0 else '#'
+        blueprint_elt_index_str = f'#{blueprint_elt_index:03d}' if blueprint_elt_index >= 0 else '#'
         blueprint_elt_type = parse_blueprint_type(blueprint_elt)
         blueprint_elt_descr = parse_blueprint_name(blueprint_elt)
-        print('{0}{1} {2}: {3}'.format((INDENTATION_PER_LEVEL * (recursion_level + 1) * ' '), blueprint_elt_index_str, blueprint_elt_type, blueprint_elt_descr))
+        indentation = str(2 * (recursion_level + 1) * ' ')
+        print(f'{indentation}{blueprint_elt_index_str} {blueprint_elt_type}: {blueprint_elt_descr}')
         # Recursive call on blueprint books
         if 'blueprint_book' in blueprint_elt and recursion_level < max_recursion_level:
             print_blueprint_book_contents(blueprint_elt, max_recursion_level, recursion_level + 1)
@@ -214,7 +213,8 @@ def update_entity_names(blueprint_obj: dict, entity_mapping: dict) -> bool:
             return True
         return False
 
-    def do_nothing(_entity: dict, _k: str): return False
+    def do_nothing(_entity: dict, _k: str):
+        return False
 
     return walk_json_obj_and_map(blueprint_obj, func_str, do_nothing, do_nothing)
 
@@ -312,8 +312,7 @@ def main():
     elif args.blueprint_file:
         assert not args.bp_exchange_string, 'Incompatible options -f and -s'
         blueprint_file = args.blueprint_file[0]
-        #print('Opening file: ' + blueprint_file)
-        with open(blueprint_file, 'rt') as f:
+        with open(blueprint_file, 'rt', encoding='ascii') as f:
             for bp_exchange_string in f:
                 blueprint_json_str = parse_bp_exchange_string(bp_exchange_string.strip())
                 process_blueprint_json_string(blueprint_json_str, args)
