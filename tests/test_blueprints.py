@@ -9,11 +9,11 @@ import blueprints
 class TestBlueprints(unittest.TestCase):
 
     def setUp(self):
-        self.test_folder = 'tests/examples'
-        self.all_test_files =   [ 'blueprint_book.txt', 'oil_processing_1_v1.1.8.txt'   ]
-        self.expected_version = [ '0.17.9.1',           '1.1.8'                         ]
-        self.expected_name =    [ 'My Book',            'Crude Oil Processing - step 1' ]
-        self.expected_type =    [ 'Blueprint Book',     'Blueprint'                     ]
+        self.test_folder = 'tests/examples/blueprints'
+        self.all_test_files =   [ 'blueprint_book.txt', 'oil_processing_1_v1.1.8.txt',   'decon_planner.txt',      'red_circuits_block.txt' ]
+        self.expected_version = [ '0.17.9.1',           '1.1.8',                         '1.1.107',                '2.0.11.3'               ]
+        self.expected_name =    [ 'My Book',            'Crude Oil Processing - step 1', 'Coal Rocks',             'Red Circuits Block'     ]
+        self.expected_type =    [ 'Blueprint Book',     'Blueprint',                     'Deconstruction Planner', 'Blueprint'              ]
 
     # blueprints.parse_bp_exchange_string
     # blueprints.generate_bp_exchange_string

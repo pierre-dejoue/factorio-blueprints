@@ -20,14 +20,14 @@ Read a blueprint exchange string from...
 
 * A file (one exchange string per line):
 
-`./blueprints.py -f ./tests/examples/blueprint_book.txt`
+`./blueprints.py -f ./tests/examples/blueprints/blueprint_book.txt`
 
 ### Get the Blueprint/Game Version
 
 Use the `--version` option to output only the blueprint version (that is, the version of Factorio that generated the blueprint)
 
 ```
-$ ./blueprints.py -f ./tests/examples/oil_processing_1_v1.1.8.txt --version
+$ ./blueprints.py -f ./tests/examples/blueprints/oil_processing_1_v1.1.8.txt --version
 1.1.8
 ```
 
