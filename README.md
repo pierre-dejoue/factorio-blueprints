@@ -123,6 +123,15 @@ Import the script as a module with some useful functions:
 
 See the [unit tests](tests/test_blueprints.py) for code examples
 
+## Map Exchange Strings
+
+A simplistic parser of the map exchange string is provided. It only parses the version.
+
+```
+$ python ./maps.py -f ./tests/examples/maps/peninsula_2.0.txt --version
+2.0.11.3
+```
+
 ## Requirements
 
 * __Python 3.x__: http://www.python.org/download/
