@@ -27,11 +27,30 @@ class TestBlueprints(unittest.TestCase):
                     json_string = blueprints.parse_exchange_string(stripped)
                     self.assertIsInstance(json_string, str)
 
-                    base64_string = blueprints.generate_exchange_string(json_string)
-                    self.assertIsInstance(base64_string, str)
+                    exchange_string = blueprints.generate_exchange_string(json_string)
+                    self.assertIsInstance(exchange_string, str)
 
-                    json_string_bis = blueprints.parse_exchange_string(base64_string)
+                    json_string_bis = blueprints.parse_exchange_string(exchange_string)
                     self.assertEqual(json_string, json_string_bis)
+
+    # blueprints.parse_exchange_string_as_json_object
+    # blueprints.generate_exchange_string_from_json_object
+    def test_json_encoding_and_decoding(self):
+        for test_file in self.all_test_files:
+            test_filepath = os.path.join(self.test_folder, test_file)
+            with open(test_filepath, 'r', encoding='ascii') as fp:
+                for blueprint_string in fp:
+                    stripped = blueprint_string.strip()
+
+                    json_obj = blueprints.parse_exchange_string_as_json_object(stripped)
+                    self.assertIsInstance(json_obj, dict)
+
+                    exchange_string = blueprints.generate_exchange_string_from_json_object(json_obj)
+                    self.assertIsInstance(exchange_string, str)
+
+                    json_obj_bis = blueprints.parse_exchange_string_as_json_object(exchange_string)
+                    self.assertEqual(json_obj, json_obj_bis)
+
 
     # blueprints.decode_game_version
     def test_game_version_decoding(self):
