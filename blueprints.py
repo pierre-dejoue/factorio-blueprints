@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Module and command line tool to manage blueprint exchange strings from the game Factorio (https://www.factorio.com/)
+Command line tool to manage blueprint exchange strings from the game Factorio (https://www.factorio.com/)
 """
 __author__ = "Pierre DEJOUE"
 __copyright__ = "Copyright (c) 2019 Pierre DEJOUE"
@@ -9,38 +9,27 @@ __version__ = "0.1"
 
 
 import argparse
-import base64
 import configparser
 import json
 import os
 import sys
-import zlib
 from collections.abc import Callable
+from factorio_game.exchange_string import blueprints
 
 
 CONFIG_FILE = 'config.ini'
 SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
-EXCHANGE_STRINGS_SUPPORTED_VERSIONS = [0]
-ALL_BLUEPRINT_TYPES = {
-    'blueprint':              'Blueprint',
-    'blueprint_book':         'Blueprint Book',
-    'deconstruction_planner': 'Deconstruction Planner',
-    'upgrade_planner':        'Upgrade Planner',
-}
 
 
 try:
     config = configparser.ConfigParser()
     config.read(os.path.join(SCRIPT_PATH, CONFIG_FILE))
 
-    EXCHANGE_STRINGS_DEFAULT_VERSION = config.getint('blueprints', 'version')
+    EXCHANGE_STRINGS_VERSION = config.getint('blueprints', 'version', fallback = blueprints.DEFAULT_EXCHANGE_STRINGS_VERSION)
     DB_PATH = config.get('blueprints-db', 'location')
 except Exception as err:
     print('Error parsing ' + CONFIG_FILE + ': ' + str(err))
     sys.exit(-1)
-
-
-assert EXCHANGE_STRINGS_DEFAULT_VERSION in EXCHANGE_STRINGS_SUPPORTED_VERSIONS, 'Blueprint version number in config.ini ' + str(EXCHANGE_STRINGS_DEFAULT_VERSION) + ' is not among the supported versions: ' + str(EXCHANGE_STRINGS_SUPPORTED_VERSIONS)
 
 
 ENTITY_RENAMING_0_16_TO_0_17 = {
@@ -64,63 +53,6 @@ def create_db_directories(db_path: str = DB_PATH) -> None:
         os.makedirs(db_directory)
 
 
-def parse_bp_exchange_string(blueprint_base64: str) -> str:
-    version = int(blueprint_base64[0])
-    assert version in EXCHANGE_STRINGS_SUPPORTED_VERSIONS, 'Blueprint version number ' + str(version) + ' is not among the supported versions: ' + str(EXCHANGE_STRINGS_SUPPORTED_VERSIONS)
-    return zlib.decompress(base64.b64decode(blueprint_base64[1:])).decode()
-
-
-def generate_bp_exchange_string(blueprint_json: str) -> str:
-    return str(EXCHANGE_STRINGS_DEFAULT_VERSION) + base64.b64encode(zlib.compress(blueprint_json.encode())).decode()
-
-
-def parse_bp_exchange_string_as_json_object(blueprint_base64: str) -> dict:
-    blueprint_json_str = parse_bp_exchange_string(blueprint_base64)
-    return json.loads(blueprint_json_str)
-
-
-def generate_bp_exchange_string_from_json_object(blueprint_obj: dict) -> str:
-    # Ensure the most compact JSON format
-    json_str = json.dumps(blueprint_obj, sort_keys=True, separators=(',', ':'))
-    return generate_bp_exchange_string(json_str)
-
-
-def decode_game_version(version: int):
-    version_major = (version & 0x0FFFF000000000000) >> 48
-    version_minor = (version & 0x00000FFFF00000000) >> 32
-    version_patch = (version & 0x000000000FFFF0000) >> 16
-    version_dev   = (version & 0x0000000000000FFFF)
-    version_str = f'{version_major}.{version_minor}.{version_patch}'
-    if version_dev != 0:
-        version_str = f'{version_str}.{version_dev}'
-    return version_str
-
-
-def parse_game_version(blueprint_obj: dict) -> str:
-    blueprint_subobj = {}
-    for key in ALL_BLUEPRINT_TYPES:
-        if key in blueprint_obj:
-            blueprint_subobj = blueprint_obj[key]
-    return decode_game_version(blueprint_subobj['version']) if 'version' in blueprint_subobj else 'unknonwn'
-
-
-def parse_blueprint_name(blueprint_obj: dict) -> str:
-    blueprint_subobj = {}
-    for key in ALL_BLUEPRINT_TYPES:
-        if key in blueprint_obj:
-            blueprint_subobj = blueprint_obj[key]
-            break
-    return blueprint_subobj['label'] if 'label' in blueprint_subobj else 'no-name'
-
-
-def parse_blueprint_type(blueprint_obj: dict) -> str:
-    blueprint_type = str(blueprint_obj.keys())
-    for key, bp_type in ALL_BLUEPRINT_TYPES.items():
-        if key in blueprint_obj:
-            blueprint_type = bp_type
-    return blueprint_type
-
-
 def pretty_print_json(blueprint_obj: dict, fp = sys.stdout) -> None:
     json.dump(blueprint_obj, fp, sort_keys=True, indent=2, separators=(',', ': '))
 
@@ -131,8 +63,8 @@ def print_blueprint_book_contents(book_obj: dict, max_recursion_level: int = 0, 
     for blueprint_elt in book_contents:
         blueprint_elt_index = blueprint_elt['index'] if 'index' in blueprint_elt else -1
         blueprint_elt_index_str = f'#{blueprint_elt_index:03d}' if blueprint_elt_index >= 0 else '#'
-        blueprint_elt_type = parse_blueprint_type(blueprint_elt)
-        blueprint_elt_descr = parse_blueprint_name(blueprint_elt)
+        blueprint_elt_type = blueprints.read_blueprint_type(blueprint_elt)
+        blueprint_elt_descr = blueprints.read_blueprint_name(blueprint_elt)
         indentation = str(2 * (recursion_level + 1) * ' ')
         print(f'{indentation}{blueprint_elt_index_str} {blueprint_elt_type}: {blueprint_elt_descr}')
         # Recursive call on blueprint books
@@ -142,8 +74,8 @@ def print_blueprint_book_contents(book_obj: dict, max_recursion_level: int = 0, 
 
 def info_from_blueprint_book(book_obj: dict, max_recursion_level: int = 0) -> None:
     assert 'blueprint_book' in book_obj, 'Not a blueprint book'
-    book_name = parse_blueprint_name(book_obj)
-    book_version = parse_game_version(book_obj)
+    book_name = blueprints.read_blueprint_name(book_obj)
+    book_version = blueprints.parse_game_version(book_obj)
     print('Blueprint Book: ' + book_name)
     print('Version: ' + book_version)
     print('Contents:')
@@ -151,9 +83,9 @@ def info_from_blueprint_book(book_obj: dict, max_recursion_level: int = 0) -> No
 
 
 def info_from_single_blueprint(blueprint_obj: dict) -> None:
-    blueprint_name = parse_blueprint_name(blueprint_obj)
-    blueprint_type = parse_blueprint_type(blueprint_obj)
-    blueprint_version = parse_game_version(blueprint_obj)
+    blueprint_name = blueprints.read_blueprint_name(blueprint_obj)
+    blueprint_type = blueprints.read_blueprint_type(blueprint_obj)
+    blueprint_version = blueprints.parse_game_version(blueprint_obj)
     print('Blueprint: ' + blueprint_name)
     if 'blueprint' not in blueprint_obj:
         print('Type: ' + blueprint_type)
@@ -189,17 +121,17 @@ def find_index_in_blueprint_book(blueprint_obj: dict, index: int) -> dict:
 
 def get_book_in_json(book_name: str, contents: str, version: int, active_index: int = 0) -> str:
     assert contents, 'Empty book [' + book_name + ']'
-    blueprints = [{'blueprint': bp_parsed_file['blueprint'], 'index': bp_parsed_file['index']} for bp_parsed_file in contents]
+    blueprint_list = [{'blueprint': bp_parsed_file['blueprint'], 'index': bp_parsed_file['index']} for bp_parsed_file in contents]
     blueprint_book = {
         'blueprint_book': {
           'active_index': active_index,
-          'blueprints': blueprints,
+          'blueprints': blueprint_list,
           'item': 'blueprint-book',
           'label': book_name,
           'version': version
         }
     }
-    return generate_bp_exchange_string_from_json_object(blueprint_book)
+    return blueprints.generate_exchange_string_from_json_object(blueprint_book, EXCHANGE_STRINGS_VERSION)
 
 
 def update_entity_names(blueprint_obj: dict, entity_mapping: dict) -> bool:
@@ -248,7 +180,7 @@ def map_blueprint_object(blueprint_obj: dict, process: ProcessBlueprint, json_pr
         if json_pretty_print:
             json.dump(blueprint_obj, sys.stdout, sort_keys=True, indent=2, separators=(',', ': '))
         else:
-            print(generate_bp_exchange_string_from_json_object(blueprint_obj))
+            print(blueprints.generate_exchange_string_from_json_object(blueprint_obj, EXCHANGE_STRINGS_VERSION))
     else:
         print('Not modified')
 
@@ -263,11 +195,11 @@ def process_blueprint_json_string(blueprint_json_str: str, args: argparse.Namesp
         blueprint_obj = json.loads(blueprint_json_str)
         # --name
         if args.bp_name:
-            print(parse_blueprint_name(blueprint_obj))
+            print(blueprints.read_blueprint_name(blueprint_obj))
             return
         # --version
         if args.bp_version:
-            print(parse_game_version(blueprint_obj))
+            print(blueprints.parse_game_version(blueprint_obj))
             return
         # --index
         if args.index is not None:
@@ -283,7 +215,7 @@ def process_blueprint_json_string(blueprint_json_str: str, args: argparse.Namesp
         elif args.json:
             pretty_print_json(blueprint_obj)
         elif args.exchange:
-            print(generate_bp_exchange_string_from_json_object(blueprint_obj))
+            print(blueprints.generate_exchange_string_from_json_object(blueprint_obj, EXCHANGE_STRINGS_VERSION))
         else:
             # By default, print information about the blueprint
             info_from_blueprint_object(blueprint_obj, args.max_recursion_level)
@@ -307,14 +239,14 @@ def main():
     # Parse blueprints and blueprint books
     if args.bp_exchange_string:
         assert not args.blueprint_file, 'Incompatible options -s and -f'
-        blueprint_json_str = parse_bp_exchange_string(args.bp_exchange_string[0])
+        blueprint_json_str = blueprints.parse_exchange_string(args.bp_exchange_string[0])
         process_blueprint_json_string(blueprint_json_str, args)
     elif args.blueprint_file:
         assert not args.bp_exchange_string, 'Incompatible options -f and -s'
         blueprint_file = args.blueprint_file[0]
         with open(blueprint_file, 'rt', encoding='ascii') as f:
             for bp_exchange_string in f:
-                blueprint_json_str = parse_bp_exchange_string(bp_exchange_string.strip())
+                blueprint_json_str = blueprints.parse_exchange_string(bp_exchange_string.strip())
                 process_blueprint_json_string(blueprint_json_str, args)
 
     return result
