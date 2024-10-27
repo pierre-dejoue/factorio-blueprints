@@ -30,7 +30,6 @@ def process_map_exchange_string(map_ex_str: str, args: argparse.Namespace):
 
 
 def main():
-    result = 0
     parser = argparse.ArgumentParser(description='Parse map exchange strings from the game Factorio (https://www.factorio.com/)')
     parser.add_argument('-s', '--from-string', metavar='EXCHANGE_STRING', dest='map_exchange_string', nargs=1, help='From a map exchange string')
     parser.add_argument('-f', '--from-file', metavar='FILE', dest='map_file', nargs=1, help='From a file with one map exchange string per line')
@@ -48,8 +47,6 @@ def main():
         with open(map_file, 'rt', encoding='ascii') as f:
             for map_exchange_string in f:
                 process_map_exchange_string(map_exchange_string.strip(), args)
-
-    return result
 
 
 if __name__ == "__main__":

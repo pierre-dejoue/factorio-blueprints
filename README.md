@@ -18,11 +18,11 @@ Read a blueprint exchange string from...
 ./blueprints.py -s 0eNp9kDFrwzAQhf+KuVkqTk1I0ZitQ6eOJRhZPZLD1klIclIT/N8r2RRnaLsI7un0vfd0h24Y0Qfi1HbO9aDumxJBfTyM5Y6M41WOdGY9FC1NHkEBJbQggLUtkx6TszqRYxkNIRuUXpseZgHEn/gFajefBCAnSoQrchmmlkfbYcgLGyxGtN1AfJZWmwsxyuds5V2k4lBCZGAtYMpndghoyP+bIlsvedVDPQGD7jBXgvd196l6TdXNhT6K6kjJXHJOAVcMcTE9NPVuXzfNy/6wtap/Q8vlazf+21QdV0WbRFdsfx7/QZ+/AShRje0=
 ```
 
-* A file (one exchange string per line):
+* One or several files (containing one exchange string per line):
 
 `./blueprints.py -f ./tests/examples/blueprints/blueprint_book.txt`
 
-### Get the Blueprint/Game Version
+### Read the Blueprint/Game Version
 
 Use the `--version` option to output only the blueprint version (that is, the version of Factorio that generated the blueprint)
 
@@ -47,7 +47,7 @@ Contents:
   #004 Blueprint: Waiting Area for 1-2 trains
 ```
 
-If the exchange string is a blueprint book, one can select a page a of the book from its index. From the example above, index `3` will select the "T" junction blueprint:
+If the exchange string is a blueprint book, one can select a page a of the book based on its index. From the example above, index `3` will select the "T" junction blueprint:
 
 ```
 $ python ./blueprints.py -f railway.txt --index 3
@@ -55,15 +55,11 @@ Blueprint: T for  two-way rails
 Version: 1.1.110
 ```
 
-Finally one can extract an exchange string for the "T" junction blueprint:
+Finally, one can extract an exchange string just for the "T" junction blueprint:
 
 ```
 $ python ./blueprints.py -f railway.txt --index 3 --exchange
-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
+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
 ```
 
 ### Recursion on blueprint books
@@ -80,7 +76,7 @@ Contents:
   #002 Blueprint Book: Malls
 ```
 
-For blueprint exchange string with multiple levels of books within book, use the `-l` option to set a maximum recursion level higher than 0:
+For blueprint exchange strings with multiple levels of books within books, use the `-l` option to set a maximum recursion level higher than 0:
 
 ```
 $ python ./blueprints.py -f squiggles_in_a_book.txt -l 1
@@ -115,13 +111,14 @@ Contents:
 
 ## Module
 
-Import the script as a module with some useful functions:
+The low-level functionality of the script is accessible via a Python [module](factorio_game/exchange_string/blueprints.py):
 
-* Encode/Decode the exchange string
+* Encode/Decode the blueprint exchange string
 * Parse the blueprint version
-* Parse the blueprint name
+* Read the blueprint name
+* Read the blueprint type
 
-See the [unit tests](tests/test_blueprints.py) for code examples
+See the [unit tests](tests/test_blueprints.py) for code examples.
 
 ## Map Exchange Strings
 

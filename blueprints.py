@@ -24,10 +24,9 @@ SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 try:
     config = configparser.ConfigParser()
     config.read(os.path.join(SCRIPT_PATH, CONFIG_FILE))
-
     EXCHANGE_STRINGS_VERSION = config.getint('blueprints', 'version', fallback = blueprints.DEFAULT_EXCHANGE_STRINGS_VERSION)
     DB_PATH = config.get('blueprints-db', 'location')
-except Exception as err:
+except configparser.Error as err:
     print('Error parsing ' + CONFIG_FILE + ': ' + str(err))
     sys.exit(-1)
 
@@ -179,7 +178,7 @@ def map_blueprint_object(blueprint_obj: dict, process: ProcessBlueprint, json_pr
     if process(blueprint_obj):
         print('Updated Blueprint:')
         if json_pretty_print:
-            json.dump(blueprint_obj, sys.stdout, sort_keys=True, indent=2, separators=(',', ': '))
+            pretty_print_json(blueprint_obj)
         else:
             print(blueprints.generate_exchange_string_from_json_object(blueprint_obj, EXCHANGE_STRINGS_VERSION))
     else:
@@ -188,69 +187,72 @@ def map_blueprint_object(blueprint_obj: dict, process: ProcessBlueprint, json_pr
 
 def process_blueprint_json_string(blueprint_json_str: str, args: argparse.Namespace) -> None:
     if args.raw:
-        assert not args.json,           'Incompatible options --raw and --json'
-        assert not args.update_to_0_17, 'Incompatible options --raw and --update-to-0.17'
-        assert not args.index,          'Incompatible options --raw and --index'
+        assert not args.index, 'Incompatible options --raw and --index'
         print(blueprint_json_str)
     else:
         blueprint_obj = json.loads(blueprint_json_str)
-        # --name
-        if args.bp_name:
-            print(blueprints.read_blueprint_name(blueprint_obj))
-            return
-        # --version
-        if args.bp_version:
-            print(blueprints.parse_game_version(blueprint_obj))
-            return
-        # --index
+        # --index (execute prior to the other options as it will affect the source blueprint)
         if args.index is not None:
             blueprint_obj = find_index_in_blueprint_book(blueprint_obj, args.index)
         if not blueprint_obj:
-            print('Not found')
+            print(f'Index {args.index} not found')
             return
-        # Remaining options: --update-to-0.17, --json, --raw, --exchange and no option (= print info)
-        if args.update_to_0_17:
-            def func_update_to_0_17(obj: dict) -> bool:
-                return update_entity_names(obj, ENTITY_RENAMING_0_16_TO_0_17)
-            map_blueprint_object(blueprint_obj, func_update_to_0_17, args.json)
+        # --name
+        if args.bp_name:
+            print(blueprints.read_blueprint_name(blueprint_obj))
+        # --version
+        elif args.bp_version:
+            print(blueprints.parse_game_version(blueprint_obj))
+
+        # --update-to-0.17
+        #elif args.update_to_0_17:
+        #    def func_update_to_0_17(obj: dict) -> bool:
+        #        return update_entity_names(obj, ENTITY_RENAMING_0_16_TO_0_17)
+        #    map_blueprint_object(blueprint_obj, func_update_to_0_17, args.json)
+        # --json
         elif args.json:
             pretty_print_json(blueprint_obj)
+        # --exchange
         elif args.exchange:
             print(blueprints.generate_exchange_string_from_json_object(blueprint_obj, EXCHANGE_STRINGS_VERSION))
+        # --info, or no option
         else:
-            # By default, print information about the blueprint
             info_from_blueprint_object(blueprint_obj, args.max_recursion_level)
 
 
 def main():
-    result = 0
     parser = argparse.ArgumentParser(description='Manage blueprint exchange strings from the game Factorio (https://www.factorio.com/)')
+    # Options to control the source blueprint
     parser.add_argument('-s', '--from-string', metavar='EXCHANGE_STRING', dest='bp_exchange_string', nargs=1, help='From a blueprint exchange string')
-    parser.add_argument('-f', '--from-file', metavar='FILE', dest='blueprint_file', nargs=1, help='From a file with one blueprint exchange string per line')
+    parser.add_argument('-f', '--from-file', metavar='FILE', dest='blueprint_files', nargs='+', help='From a file (or files) with one blueprint exchange string per line')
     parser.add_argument('--index', metavar='INDEX_IN_BOOK', type=int, dest='index', help='Index of an element in a blueprint book')
+    # Options to control the output of the script. By default --info is assumed.
+    parser.add_argument('--info', dest='info', action='store_true', help='Print out information regarding the blueprint (This is the default behavior)')
     parser.add_argument('--json', dest='json', action='store_true', help='Print out the blueprint as pretty-printed JSON')
     parser.add_argument('--raw', dest='raw', action='store_true', help='Print out the decoded exchange string')
     parser.add_argument('--exchange', dest='exchange', action='store_true', help='Print out the exchange string')
     parser.add_argument('--name', dest='bp_name', action='store_true', help='Print out the name of the blueprint')
     parser.add_argument('--version', dest='bp_version', action='store_true', help='Print out the version of the game that generated the blueprint')
     parser.add_argument('-l', '--max-recursion-level', metavar='LEVEL', type=int, dest='max_recursion_level', default=0, help='Max recursion level while traversing blueprint books. Default: 0 (only the first level)')
-    parser.add_argument('--update-to-0.17', dest='update_to_0_17', action='store_true', help='Update some entity names for 0.17')
+    #parser.add_argument('--update-to-0.17', dest='update_to_0_17', action='store_true', help='(Old-fashioned) Update some entity names from 0.16 to 0.17 version')
     args = parser.parse_args()
 
     # Parse blueprints and blueprint books
     if args.bp_exchange_string:
-        assert not args.blueprint_file, 'Incompatible options -s and -f'
+        assert not args.blueprint_files, 'Incompatible options -s and -f'
         blueprint_json_str = blueprints.parse_exchange_string(args.bp_exchange_string[0])
         process_blueprint_json_string(blueprint_json_str, args)
-    elif args.blueprint_file:
+    elif args.blueprint_files:
         assert not args.bp_exchange_string, 'Incompatible options -f and -s'
-        blueprint_file = args.blueprint_file[0]
-        with open(blueprint_file, 'rt', encoding='ascii') as f:
-            for bp_exchange_string in f:
-                blueprint_json_str = blueprints.parse_exchange_string(bp_exchange_string.strip())
-                process_blueprint_json_string(blueprint_json_str, args)
-
-    return result
+        print_out_filename = len(args.blueprint_files) > 1
+        for blueprint_file in args.blueprint_files:
+            with open(blueprint_file, 'rt', encoding='ascii') as f:
+                if print_out_filename:
+                    print('-' * 40)
+                    print('File: ' + blueprint_file)
+                for bp_exchange_string in f:
+                    blueprint_json_str = blueprints.parse_exchange_string(bp_exchange_string.strip())
+                    process_blueprint_json_string(blueprint_json_str, args)
 
 
 if __name__ == "__main__":
