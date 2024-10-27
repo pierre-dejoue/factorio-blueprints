@@ -11,18 +11,21 @@ __version__ = "0.1"
 import base64
 import json
 import zlib
+from enum import Enum
 
 
 DEFAULT_EXCHANGE_STRINGS_VERSION = 0
-
-
 _EXCHANGE_STRINGS_SUPPORTED_VERSIONS = [DEFAULT_EXCHANGE_STRINGS_VERSION]
-_ALL_BLUEPRINT_TYPES = {
-    'blueprint':              'Blueprint',
-    'blueprint_book':         'Blueprint Book',
-    'deconstruction_planner': 'Deconstruction Planner',
-    'upgrade_planner':        'Upgrade Planner',
-}
+
+
+class Type(str, Enum):
+    BP = 'blueprint'
+    BOOK = 'blueprint_book'
+    DECON = 'deconstruction_planner'
+    UPGRADE ='upgrade_planner'
+
+
+_ALL_TYPES = [Type.BP, Type.BOOK, Type.DECON, Type.UPGRADE]
 
 
 def _version_check(version: int):
@@ -64,7 +67,8 @@ def decode_game_version(version: int):
 
 def parse_game_version(blueprint_obj: dict) -> str:
     blueprint_subobj = {}
-    for key in _ALL_BLUEPRINT_TYPES:
+    for bp_type in _ALL_TYPES:
+        key = bp_type.value
         if key in blueprint_obj:
             blueprint_subobj = blueprint_obj[key]
     return decode_game_version(blueprint_subobj['version']) if 'version' in blueprint_subobj else 'unknonwn'
@@ -72,16 +76,22 @@ def parse_game_version(blueprint_obj: dict) -> str:
 
 def read_blueprint_name(blueprint_obj: dict) -> str:
     blueprint_subobj = {}
-    for key in _ALL_BLUEPRINT_TYPES:
+    for bp_type in _ALL_TYPES:
+        key =  bp_type.value
         if key in blueprint_obj:
             blueprint_subobj = blueprint_obj[key]
             break
     return blueprint_subobj['label'] if 'label' in blueprint_subobj else 'no-name'
 
 
-def read_blueprint_type(blueprint_obj: dict) -> str:
-    blueprint_type = str(blueprint_obj.keys())
-    for key, bp_type in _ALL_BLUEPRINT_TYPES.items():
+def read_blueprint_type(blueprint_obj: dict) -> Type:
+    for bp_type in _ALL_TYPES:
+        key = bp_type.value
         if key in blueprint_obj:
-            blueprint_type = bp_type
-    return blueprint_type
+            return bp_type
+    return None
+
+
+def read_blueprint_type_str(blueprint_obj: dict) -> str:
+    bp_type = read_blueprint_type(blueprint_obj)
+    return bp_type.value if bp_type else 'unknown'

@@ -57,6 +57,12 @@ def pretty_print_json(blueprint_obj: dict, fp = sys.stdout) -> None:
     json.dump(blueprint_obj, fp, sort_keys=True, indent=2, separators=(',', ': '))
 
 
+def pretty_print_bp_type(bp_type: blueprints.Type, blueprint_obj: dict) -> str:
+    if bp_type:
+        return ' '.join([ substr.capitalize() for substr in bp_type.value.replace('_', ' ').split()])
+    return str(blueprint_obj.keys())
+
+
 def print_blueprint_book_contents(book_obj: dict, max_recursion_level: int = 0, recursion_level: int = 0) -> None:
     assert 'blueprint_book' in book_obj, 'Only accept blueprint book as input'
     book_contents = book_obj['blueprint_book']['blueprints']
@@ -64,9 +70,10 @@ def print_blueprint_book_contents(book_obj: dict, max_recursion_level: int = 0, 
         blueprint_elt_index = blueprint_elt['index'] if 'index' in blueprint_elt else -1
         blueprint_elt_index_str = f'#{blueprint_elt_index:03d}' if blueprint_elt_index >= 0 else '#'
         blueprint_elt_type = blueprints.read_blueprint_type(blueprint_elt)
+        blueprint_elt_type_str = pretty_print_bp_type(blueprint_elt_type, blueprint_elt)
         blueprint_elt_descr = blueprints.read_blueprint_name(blueprint_elt)
         indentation = str(2 * (recursion_level + 1) * ' ')
-        print(f'{indentation}{blueprint_elt_index_str} {blueprint_elt_type}: {blueprint_elt_descr}')
+        print(f'{indentation}{blueprint_elt_index_str} {blueprint_elt_type_str}: {blueprint_elt_descr}')
         # Recursive call on blueprint books
         if 'blueprint_book' in blueprint_elt and recursion_level < max_recursion_level:
             print_blueprint_book_contents(blueprint_elt, max_recursion_level, recursion_level + 1)
@@ -85,27 +92,21 @@ def info_from_blueprint_book(book_obj: dict, max_recursion_level: int = 0) -> No
 def info_from_single_blueprint(blueprint_obj: dict) -> None:
     blueprint_name = blueprints.read_blueprint_name(blueprint_obj)
     blueprint_type = blueprints.read_blueprint_type(blueprint_obj)
+    blueprint_type_str = pretty_print_bp_type(blueprint_type, blueprint_obj)
     blueprint_version = blueprints.parse_game_version(blueprint_obj)
     print('Blueprint: ' + blueprint_name)
-    if 'blueprint' not in blueprint_obj:
-        print('Type: ' + blueprint_type)
+    if blueprint_type != blueprints.Type.BP:
+        print('Type: ' + blueprint_type_str)
     print('Version: ' + blueprint_version)
 
 
-def info_from_blueprint_object(blueprint_obj: dict, max_recursion_level: int = 0) -> int:
-    result = 0
-    if 'blueprint_book' in blueprint_obj:
+def info_from_blueprint_object(blueprint_obj: dict, max_recursion_level: int = 0) -> None:
+    bp_type = blueprints.read_blueprint_type(blueprint_obj)
+    if bp_type == blueprints.Type.BOOK:
         info_from_blueprint_book(blueprint_obj, max_recursion_level)
-    elif 'blueprint' in blueprint_obj:
-        info_from_single_blueprint(blueprint_obj)
-    elif 'deconstruction_planner' in blueprint_obj:
-        info_from_single_blueprint(blueprint_obj)
-    elif 'upgrade_planner' in blueprint_obj:
-        info_from_single_blueprint(blueprint_obj)
     else:
-        print('ParsingError: Could not identify the type of blueprint ' + str(blueprint_obj.keys()))
-        result = -1
-    return result
+        # All the other types, or an unknown type (bp_type is None)
+        info_from_single_blueprint(blueprint_obj)
 
 
 def find_index_in_blueprint_book(blueprint_obj: dict, index: int) -> dict:
