@@ -1,4 +1,8 @@
+.venv/
+venv/
 __pycache__/
+*.py[cod]
+*$py.class
 .pylint*/
 factorio-blueprints-db/
 misc/
