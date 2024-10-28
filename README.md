@@ -1,7 +1,7 @@
 Factorio Blueprints
 ===================
 
-A command line tool to parse and manage blueprint exchange strings from the game **[Factorio](https://www.factorio.com/)**.
+A command line tool to parse and manage blueprint exchange strings used by the game **[Factorio](https://www.factorio.com/)**.
 
 ![Python3](http://img.shields.io/badge/python-3-blue.svg?v=1)
 [![License](http://img.shields.io/:license-mit-blue.svg?style=flat-square)](./LICENSE)
@@ -10,7 +10,7 @@ A command line tool to parse and manage blueprint exchange strings from the game
 
 ### Input
 
-Read a blueprint exchange string from...
+The script [blueprints.py](./blueprints.py) reads a blueprint exchange strings. The source can be:
 
 * A raw string directly in the command line:
 
@@ -108,6 +108,24 @@ Contents:
 ### More commands
 
 `python ./blueprints.py --help`
+
+## Edit a Blueprint
+
+The script [blueprints.py](./blueprints.py) reads a blueprint exchange string and can be used the convert it to an editable JSON text file.
+
+Another script, [json_to_blueprint_exchange_string.py](./json_to_blueprint_exchange_string.py), is available to do the conversion back to an exchange string.
+
+Below is an example of how to edit a blueprint manually:
+
+* Blueprint exchange string -> pretty-printed JSON:
+
+`./blueprints.py -f ./tests/examples/blueprints/blueprint_book.txt --json > my_book_in_json.txt`
+
+* Edit `my_book_in_json.txt`
+
+* JSON -> exchange string:
+
+`./json_to_blueprint_exchange_string.py my_book_in_json.txt > my_book.txt`
 
 ## Module
 
