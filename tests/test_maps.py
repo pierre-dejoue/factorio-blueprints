@@ -10,8 +10,8 @@ class TestMaps(unittest.TestCase):
 
     def setUp(self):
         self.test_folder = 'tests/examples/maps'
-        self.all_test_files =   [ 'old_one.txt', 'my_base.txt', 'forest.txt', 'peninsula_2.0.txt' ]
-        self.expected_version = [ '0.10.12',     '0.14.23',     '1.1.110',    '2.0.11.3'          ]
+        self.all_test_files =   [ 'old_one.txt', 'my_base.txt', 'forest.txt', 'peninsula_2.0.txt', 'island_2.0.txt' ]
+        self.expected_version = [ '0.10.12',     '0.14.23',     '1.1.110',    '2.0.11.3'         , '2.0.43.3' ]
 
     # maps.parse_exchange_string
     # maps.parse_game_version
