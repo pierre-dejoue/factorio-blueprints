@@ -3,6 +3,8 @@ Factorio Blueprints
 
 A command line tool to parse and manage blueprint exchange strings used by the game **[Factorio](https://www.factorio.com/)**.
 
+Compatible with versions 1.x and 2.0 of the game!
+
 ![Python3](http://img.shields.io/badge/python-3.13-blue.svg?v=1)
 [![License](http://img.shields.io/:license-mit-blue.svg?style=flat-square)](./LICENSE)
 
@@ -27,8 +29,8 @@ The script [blueprints.py](./blueprints.py) reads a blueprint exchange strings. 
 Use the `--version` option to output only the blueprint version (that is, the version of Factorio that generated the blueprint)
 
 ```
-$ ./blueprints.py -f ./tests/examples/blueprints/oil_processing_1_v1.1.8.txt --version
-1.1.8
+$ ./blueprints.py -f ./tests/examples/blueprints/red_circuits_block.txt --version
+2.0.11.3
 ```
 
 ### Parsing
@@ -36,7 +38,7 @@ $ ./blueprints.py -f ./tests/examples/blueprints/oil_processing_1_v1.1.8.txt --v
 By default, when passed no option, the script will parse the blueprint exchange string and print a summary of its contents:
 
 ```
-$ python ./blueprints.py -f railway.txt
+$ python ./blueprints.py -f ./tests/examples/blueprints/railway.txt
 Book: Railway
 Version: 1.1.110
 Contents:
@@ -50,7 +52,7 @@ Contents:
 If the exchange string is a blueprint book, one can select a page a of the book based on its index. From the example above, index `3` will select the "T" junction blueprint:
 
 ```
-$ python ./blueprints.py -f railway.txt --index 3
+$ python ./blueprints.py -f ./tests/examples/blueprints/railway.txt --index 3
 Blueprint: T for  two-way rails
 Version: 1.1.110
 ```
@@ -58,7 +60,7 @@ Version: 1.1.110
 Finally, one can extract an exchange string just for the "T" junction blueprint:
 
 ```
-$ python ./blueprints.py -f railway.txt --index 3 --exchange
+$ python ./blueprints.py -f ./test/examples/blueprints/railway.txt --index 3 --exchange
 0eJylmNtuozAQhl8l8jWuMD6A8xy9W1WrHLyppRQiQtpGVd59TUyzSTyQme1NJAJ8zIznnxn7iy23B7drfd2x+Rdzdec77/Zs/mu4OP6uD29L17K5yFi9eHNsztqF3/LV68LXfO839WLLMrZr9uHNpu4pn+HhJ52xI5tzoZ706ZQltOJC23eBt3nteI9NSXLggBSJpdgbytq3bhXvquyeqW79HPUwT1y8wuoEqy/Y1aF9d+sRQ4uBmUPuGmrQJEQpqUEDKRXVFnGmrJq6jkHa9/dF/7NpnauvU86vQyDs1Uf7P7Q5vWSsdWvUk+Fj9xbbi8VLv+FuG8xo/Yrvmq0LVtcu+LBsDm2f/IXNtHlJXDFTiyNyalwFiBHEwNrHuScKXPJVkWhAu6haS+wqUrsUzi6uIlLdI2WK1FgzuYjQEvSWKjWYQpVaiYhZhatPvPyuTyMVWFiii3Adp2Z9UipTFwu0BPgAlQgouuPwEg9Fi4LrEWiawgVSFXkkFuCyoGUgR+wqU7vQmvhujAhf0Qq5id89Bd2MbvIF3YvQrQjZiQpCK7JpGxpyKX+cnzKnpFLxeL0ktTuBPU6Sp797y0RqGVqKkZkg07Yp70bB6ZFXf9fbHK63Ei1JO+I0YCFRkvBqoDU4EjkgTar/iVyeztHAOqPbVoSCBUMRu1bicio1RW1aiPaiqD0L0V2UJM1cycgFWKmITRBeEmLHgiEG51wcdME5VxFntiTkJg0QSQ2XwQ3YVqZyUGg5DPMuOKhqtB5i8MECp9EKsBMQ5FYl7pPhnZgmtgI4JOisthMQYlLbH+6RLXaLbMG5RJsfzSVmak2IsrIghHjoAO+wNVoydoJi8ltRPzoJExIeCwxxooJPYwy6U9hryuRBmJGUsnU5Dxt1FC2owVGYQpyiekrIVL86iymowtdr93mupIMn4ekrLwOnO+76K9+5N3Y2YXilAF6Jf/Dnf6+9+7Y7hGfiZ3vG/OqMNWPbxdIFAnue/Wna2az7aPjH4jjrv70Pt99du499thKqtEVZVZWxoghiHcyQp78K8Sif
 ```
 
@@ -108,6 +110,29 @@ Contents:
 ### More commands
 
 `python ./blueprints.py --help`
+
+```
+usage: blueprints.py [-h] [-s EXCHANGE_STRING] [-f FILE [FILE ...]] [--index INDEX_IN_BOOK] [--info] [--json] [--raw] [--exchange] [--name] [--version] [-l LEVEL]
+
+Manage blueprint exchange strings from the game Factorio (https://www.factorio.com/)
+
+options:
+  -h, --help            show this help message and exit
+  -s, --from-string EXCHANGE_STRING
+                        From a blueprint exchange string
+  -f, --from-file FILE [FILE ...]
+                        From a file (or files) with one blueprint exchange string per line
+  --index INDEX_IN_BOOK
+                        Index of an element in a blueprint book
+  --info                Print out information regarding the blueprint (This is the default behavior)
+  --json                Print out the blueprint as pretty-printed JSON
+  --raw                 Print out the decoded exchange string
+  --exchange            Print out the exchange string
+  --name                Print out the name of the blueprint
+  --version             Print out the version of the game that generated the blueprint
+  -l, --max-recursion-level LEVEL
+                        Max recursion level while traversing blueprint books. Default: 0 (only the first level)
+```
 
 ## Edit a Blueprint
 
