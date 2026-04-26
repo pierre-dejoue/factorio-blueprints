@@ -7,6 +7,7 @@ from factorio_game.exchange_string import blueprints
 
 
 class TestBlueprints(unittest.TestCase):
+    """Unit tests of the blueprints module"""
 
     def setUp(self):
         self.test_folder = 'tests/examples/blueprints'

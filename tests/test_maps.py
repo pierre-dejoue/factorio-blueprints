@@ -7,6 +7,7 @@ from factorio_game.exchange_string import maps
 
 
 class TestMaps(unittest.TestCase):
+    """Unit tests of the maps module"""
 
     def setUp(self):
         self.test_folder = 'tests/examples/maps'

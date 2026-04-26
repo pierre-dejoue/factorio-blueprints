@@ -19,6 +19,8 @@ _EXCHANGE_STRINGS_SUPPORTED_VERSIONS = [DEFAULT_EXCHANGE_STRINGS_VERSION]
 
 
 class Type(str, Enum):
+    """Namespaced blueprint types"""
+
     BP = 'blueprint'
     BOOK = 'blueprint_book'
     DECON = 'deconstruction_planner'
@@ -29,7 +31,10 @@ _ALL_TYPES = [Type.BP, Type.BOOK, Type.DECON, Type.UPGRADE]
 
 
 def _version_check(version: int):
-    assert version in _EXCHANGE_STRINGS_SUPPORTED_VERSIONS, 'Blueprint version number ' + str(version) + ' is not among the supported versions: ' + str(_EXCHANGE_STRINGS_SUPPORTED_VERSIONS)
+    assert version in _EXCHANGE_STRINGS_SUPPORTED_VERSIONS, (
+        f'Blueprint version number {version} is not among '
+        f'the supported versions: {_EXCHANGE_STRINGS_SUPPORTED_VERSIONS}'
+    )
 
 
 def parse_exchange_string(blueprint_base64: str) -> str:
@@ -58,7 +63,7 @@ def decode_game_version(version: int):
     version_major = (version & 0x0FFFF000000000000) >> 48
     version_minor = (version & 0x00000FFFF00000000) >> 32
     version_patch = (version & 0x000000000FFFF0000) >> 16
-    version_dev   = (version & 0x0000000000000FFFF)
+    version_dev   =  version & 0x0000000000000FFFF
     version_str = f'{version_major}.{version_minor}.{version_patch}'
     if version_dev != 0:
         version_str = f'{version_str}.{version_dev}'

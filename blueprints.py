@@ -24,7 +24,7 @@ SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))
 try:
     config = configparser.ConfigParser()
     config.read(os.path.join(SCRIPT_PATH, CONFIG_FILE))
-    EXCHANGE_STRINGS_VERSION = config.getint('blueprints', 'version', fallback = blueprints.DEFAULT_EXCHANGE_STRINGS_VERSION)
+    EXCHANGE_STRINGS_VERSION = config.getint('blueprints', 'version', fallback=blueprints.DEFAULT_EXCHANGE_STRINGS_VERSION)
     DB_PATH = config.get('blueprints-db', 'location')
 except configparser.Error as err:
     print('Error parsing ' + CONFIG_FILE + ': ' + str(err))
@@ -223,18 +223,29 @@ def process_blueprint_json_string(blueprint_json_str: str, args: argparse.Namesp
 def main():
     parser = argparse.ArgumentParser(description='Manage blueprint exchange strings from the game Factorio (https://www.factorio.com/)')
     # Options to control the source blueprint
-    parser.add_argument('-s', '--from-string', metavar='EXCHANGE_STRING', dest='bp_exchange_string', nargs=1, help='From a blueprint exchange string')
-    parser.add_argument('-f', '--from-file', metavar='FILE', dest='blueprint_files', nargs='+', help='From a file (or files) with one blueprint exchange string per line')
-    parser.add_argument('--index', metavar='INDEX_IN_BOOK', type=int, dest='index', help='Index of an element in a blueprint book')
+    parser.add_argument('-s', '--from-string', metavar='EXCHANGE_STRING', dest='bp_exchange_string', nargs=1,
+                        help='From a blueprint exchange string')
+    parser.add_argument('-f', '--from-file', metavar='FILE', dest='blueprint_files', nargs='+',
+                        help='From a file (or files) with one blueprint exchange string per line')
+    parser.add_argument('--index', metavar='INDEX_IN_BOOK', type=int, dest='index',
+                        help='Index of an element in a blueprint book')
     # Options to control the output of the script. By default --info is assumed.
-    parser.add_argument('--info', dest='info', action='store_true', help='Print out information regarding the blueprint (This is the default behavior)')
-    parser.add_argument('--json', dest='json', action='store_true', help='Print out the blueprint as pretty-printed JSON')
-    parser.add_argument('--raw', dest='raw', action='store_true', help='Print out the decoded exchange string')
-    parser.add_argument('--exchange', dest='exchange', action='store_true', help='Print out the exchange string')
-    parser.add_argument('--name', dest='bp_name', action='store_true', help='Print out the name of the blueprint')
-    parser.add_argument('--version', dest='bp_version', action='store_true', help='Print out the version of the game that generated the blueprint')
-    parser.add_argument('-l', '--max-recursion-level', metavar='LEVEL', type=int, dest='max_recursion_level', default=0, help='Max recursion level while traversing blueprint books. Default: 0 (only the first level)')
-    #parser.add_argument('--update-to-0.17', dest='update_to_0_17', action='store_true', help='(Old-fashioned) Update some entity names from 0.16 to 0.17 version')
+    parser.add_argument('--info', dest='info', action='store_true',
+                        help='Print out information regarding the blueprint (This is the default behavior)')
+    parser.add_argument('--json', dest='json', action='store_true',
+                        help='Print out the blueprint as pretty-printed JSON')
+    parser.add_argument('--raw', dest='raw', action='store_true',
+                        help='Print out the decoded exchange string')
+    parser.add_argument('--exchange', dest='exchange', action='store_true',
+                        help='Print out the exchange string')
+    parser.add_argument('--name', dest='bp_name', action='store_true',
+                        help='Print out the name of the blueprint')
+    parser.add_argument('--version', dest='bp_version', action='store_true',
+                        help='Print out the version of the game that generated the blueprint')
+    parser.add_argument('-l', '--max-recursion-level', metavar='LEVEL', type=int, dest='max_recursion_level', default=0,
+                        help='Max recursion level while traversing blueprint books. Default: 0 (only the first level)')
+    #parser.add_argument('--update-to-0.17', dest='update_to_0_17', action='store_true',
+    #                    help='(Old-fashioned) Update some entity names from 0.16 to 0.17 version')
     args = parser.parse_args()
 
     # Parse blueprints and blueprint books

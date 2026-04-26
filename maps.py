@@ -31,10 +31,14 @@ def process_map_exchange_string(map_ex_str: str, args: argparse.Namespace):
 
 def main():
     parser = argparse.ArgumentParser(description='Parse map exchange strings from the game Factorio (https://www.factorio.com/)')
-    parser.add_argument('-s', '--from-string', metavar='EXCHANGE_STRING', dest='map_exchange_string', nargs=1, help='From a map exchange string')
-    parser.add_argument('-f', '--from-file', metavar='FILE', dest='map_file', nargs=1, help='From a file with one map exchange string per line')
-    parser.add_argument('-o', '--output', metavar='FILE', dest='out_bin_file', nargs=1, default = DEFAULT_OUTPUT_MAP_DATA_FILE, help='Output map exchange data in binary format')
-    parser.add_argument('--version', dest='map_version', action='store_true', help='Print out the version of the game that generated the map')
+    parser.add_argument('-s', '--from-string', metavar='EXCHANGE_STRING', dest='map_exchange_string', nargs=1,
+                        help='From a map exchange string')
+    parser.add_argument('-f', '--from-file', metavar='FILE', dest='map_file', nargs=1,
+                        help='From a file with one map exchange string per line')
+    parser.add_argument('-o', '--output', metavar='FILE', dest='out_bin_file', nargs=1, default=DEFAULT_OUTPUT_MAP_DATA_FILE,
+                        help='Output map exchange data in binary format')
+    parser.add_argument('--version', dest='map_version', action='store_true',
+                        help='Print out the version of the game that generated the map')
     args = parser.parse_args()
 
     # Parse maps and map books
