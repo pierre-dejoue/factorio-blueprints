@@ -56,7 +56,7 @@ def pretty_print_json(blueprint_obj: dict, fp = sys.stdout) -> None:
     json.dump(blueprint_obj, fp, sort_keys=True, indent=2, separators=(',', ': '))
 
 
-def pretty_print_bp_type(bp_type: blueprints.Type, blueprint_obj: dict) -> str:
+def pretty_print_bp_type(bp_type: blueprints.Type | None, blueprint_obj: dict) -> str:
     if bp_type:
         return ' '.join([ substr.capitalize() for substr in bp_type.value.replace('_', ' ').split()])
     return str(blueprint_obj.keys())
@@ -110,28 +110,13 @@ def info_from_blueprint_object(blueprint_obj: dict, max_recursion_level: int = 0
 
 def find_index_in_blueprint_book(blueprint_obj: dict, index: int) -> dict:
     if 'blueprint_book' not in blueprint_obj:
-        return None
+        return {}
     book_contents = blueprint_obj['blueprint_book']['blueprints']
     for blueprint_elt in book_contents:
         blueprint_elt_index = blueprint_elt['index'] if 'index' in blueprint_elt else -1
         if blueprint_elt_index == index:
             return blueprint_elt
-    return None
-
-
-def get_book_in_json(book_name: str, contents: str, version: int, active_index: int = 0) -> str:
-    assert contents, 'Empty book [' + book_name + ']'
-    blueprint_list = [{'blueprint': bp_parsed_file['blueprint'], 'index': bp_parsed_file['index']} for bp_parsed_file in contents]
-    blueprint_book = {
-        'blueprint_book': {
-          'active_index': active_index,
-          'blueprints': blueprint_list,
-          'item': 'blueprint-book',
-          'label': book_name,
-          'version': version
-        }
-    }
-    return blueprints.generate_exchange_string_from_json_object(blueprint_book, EXCHANGE_STRINGS_VERSION)
+    return {}
 
 
 def update_entity_names(blueprint_obj: dict, entity_mapping: dict) -> bool:
@@ -151,7 +136,7 @@ def update_entity_names(blueprint_obj: dict, entity_mapping: dict) -> bool:
     return walk_json_obj_and_map(blueprint_obj, func_str, do_nothing, do_nothing)
 
 
-ProcessBlueprint = Callable[[dict, dict], bool]
+ProcessBlueprint = Callable[[dict, str], bool]
 
 
 def walk_json_obj_and_map(json_obj, process_str: ProcessBlueprint, process_int: ProcessBlueprint, process_float: ProcessBlueprint) -> bool:
@@ -174,7 +159,7 @@ def walk_json_obj_and_map(json_obj, process_str: ProcessBlueprint, process_int: 
     return modified
 
 
-def map_blueprint_object(blueprint_obj: dict, process: ProcessBlueprint, json_pretty_print: bool) -> None:
+def map_blueprint_object(blueprint_obj: dict, process: Callable[[dict], bool], json_pretty_print: bool) -> None:
     if process(blueprint_obj):
         print('Updated Blueprint:')
         if json_pretty_print:

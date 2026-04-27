@@ -88,7 +88,7 @@ def read_blueprint_name(blueprint_obj: dict) -> str:
     return blueprint_subobj['label'] if 'label' in blueprint_subobj else 'no-name'
 
 
-def read_blueprint_type(blueprint_obj: dict) -> Type:
+def read_blueprint_type(blueprint_obj: dict) -> Type | None:
     for bp_type in _ALL_TYPES:
         key = bp_type.value
         if key in blueprint_obj:
