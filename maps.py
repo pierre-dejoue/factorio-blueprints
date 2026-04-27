@@ -9,8 +9,8 @@ __version__ = "0.1"
 
 
 import argparse
-from factorio_game.exchange_string import maps
 
+from factorio_game.exchange_string import maps
 
 DEFAULT_OUTPUT_MAP_DATA_FILE = 'out.dat'
 

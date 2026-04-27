@@ -14,8 +14,8 @@ import json
 import os
 import sys
 from collections.abc import Callable
-from factorio_game.exchange_string import blueprints
 
+from factorio_game.exchange_string import blueprints
 
 CONFIG_FILE = 'config.ini'
 SCRIPT_PATH = os.path.dirname(os.path.realpath(__file__))

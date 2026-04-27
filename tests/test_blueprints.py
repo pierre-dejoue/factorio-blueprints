@@ -3,6 +3,7 @@ Unit tests of module factorio_game.exchange_string.blueprints
 """
 import os
 import unittest
+
 from factorio_game.exchange_string import blueprints
 
 
