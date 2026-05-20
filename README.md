@@ -172,14 +172,24 @@ $ python ./maps.py -f ./tests/examples/maps/peninsula_2.0.txt --version
 2.0.11.3
 ```
 
-## Requirements
+## Maintenance
+
+### Requirements
 
 * __Python 3.x__: http://www.python.org/download/
 
-Currently there are no packages required. Should the need arise:
+No `requirements.txt` needed at the moment.
 
-`python -m pip install -r requirements.txt`
+### Unit tests
 
-## Unit Tests
+```
+python -m unittest -v
+```
 
-`python -m unittest -v`
+### Static checks
+
+```
+pylint  $(git ls-files '*.py')
+ruff check
+mypy .
+```
