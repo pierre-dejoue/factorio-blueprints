@@ -5,7 +5,9 @@ A command line tool to parse and manage blueprint exchange strings used by the g
 
 Compatible with versions 1.x and 2.0 of the game!
 
-![Python3](http://img.shields.io/badge/python-3.13-blue.svg?v=1)
+![Python313](http://img.shields.io/badge/python-3.13-blue.svg?v=1)
+![Python314](http://img.shields.io/badge/python-3.14-blue.svg?v=1)
+![Python315](http://img.shields.io/badge/python-3.15-blue.svg?v=1)<br>
 [![License](http://img.shields.io/:license-mit-blue.svg?style=flat-square)](./LICENSE)
 
 ## Usage
