@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Module to manage blueprint exchange strings from the game Factorio (https://www.factorio.com/)
 """
@@ -75,7 +74,8 @@ def parse_game_version(blueprint_obj: dict) -> str:
         key = bp_type.value
         if key in blueprint_obj:
             blueprint_subobj = blueprint_obj[key]
-    return decode_game_version(blueprint_subobj['version']) if 'version' in blueprint_subobj else 'unknonwn'
+    version = blueprint_subobj.get('version')
+    return decode_game_version(version) if version else 'unknonwn'
 
 
 def read_blueprint_name(blueprint_obj: dict) -> str:
@@ -85,7 +85,7 @@ def read_blueprint_name(blueprint_obj: dict) -> str:
         if key in blueprint_obj:
             blueprint_subobj = blueprint_obj[key]
             break
-    return blueprint_subobj['label'] if 'label' in blueprint_subobj else 'no-name'
+    return blueprint_subobj.get('label', 'no-name')
 
 
 def read_blueprint_type(blueprint_obj: dict) -> Type | None:

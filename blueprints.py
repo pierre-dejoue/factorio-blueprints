@@ -63,10 +63,10 @@ def pretty_print_bp_type(bp_type: blueprints.Type | None, blueprint_obj: dict) -
 
 
 def print_blueprint_book_contents(book_obj: dict, max_recursion_level: int = 0, recursion_level: int = 0) -> None:
-    assert 'blueprint_book' in book_obj, 'Only accept blueprint book as input'
+    assert 'blueprint_book' in book_obj, 'Only accept blueprint books as input'
     book_contents = book_obj['blueprint_book']['blueprints']
     for blueprint_elt in book_contents:
-        blueprint_elt_index = blueprint_elt['index'] if 'index' in blueprint_elt else -1
+        blueprint_elt_index = blueprint_elt.get('index', -1)
         blueprint_elt_index_str = f'#{blueprint_elt_index:03d}' if blueprint_elt_index >= 0 else '#'
         blueprint_elt_type = blueprints.read_blueprint_type(blueprint_elt)
         blueprint_elt_type_str = pretty_print_bp_type(blueprint_elt_type, blueprint_elt)
@@ -113,7 +113,7 @@ def find_index_in_blueprint_book(blueprint_obj: dict, index: int) -> dict:
         return {}
     book_contents = blueprint_obj['blueprint_book']['blueprints']
     for blueprint_elt in book_contents:
-        blueprint_elt_index = blueprint_elt['index'] if 'index' in blueprint_elt else -1
+        blueprint_elt_index = blueprint_elt.get('index', -1)
         if blueprint_elt_index == index:
             return blueprint_elt
     return {}

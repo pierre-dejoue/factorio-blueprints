@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 Module to parse map exchange strings from the game Factorio (https://www.factorio.com/)
 
